@@ -196,7 +196,7 @@ In composer.json, add a `psr-4` autoload for each unique namespace, for example:
 {
     "name": "example",
     "require": {
-        "php": ">=7.1.0",
+        "php": ">=7.2.0",
         "shaggy8871/yurly": "^1.0",
         "twig/twig": "^2.0"
     },
