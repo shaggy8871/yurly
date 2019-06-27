@@ -2,18 +2,19 @@
 
 namespace Yurly\Core;
 
+use Yurly\Inject\Response\Phtml;
 use Yurly\Core\Exception\{
     ConfigException,
     UnknownPropertyException,
     RouteNotFoundException
 };
-use Yurly\Inject\Response\Phtml;
 
 class Init
 {
 
     protected $projects;
     protected $onRouteNotFound;
+    protected $onUrlParseError;
 
     public function __construct(array $projects = [])
     {
@@ -24,12 +25,22 @@ class Init
     }
 
     /*
-     * Call a function if we are unable to route
+     * Call a function if we are unable to find a route
      */
     public function onRouteNotFound(callable $callback): void
     {
 
         $this->onRouteNotFound = $callback;
+
+    }
+
+    /*
+     * Call a function if we are unable to parse a URL
+     */
+    public function onUrlParseError(callable $callback): void
+    {
+
+        $this->onUrlParseError = $callback;
 
     }
 
@@ -66,6 +77,29 @@ class Init
                     ->setViewFilename('error.phtml')
                     ->setViewParams([
                         'statusCode' => 404,
+                        'exceptionMessage' => $e->getMessage()
+                    ])
+                    ->render();
+            }
+
+        } catch (\Exception $e) {
+
+            if ($this->onUrlParseError) {
+                // Call the user defined route not found handler
+                call_user_func($this->onUrlParseError, [
+                    'statusCode' => 500,
+                    'context' => $context,
+                    'exceptionMessage' => $e->getMessage()
+                ]);
+            } else {
+                // Display a default error page
+                $response = new Phtml($context);
+                $response
+                    ->setStatusCode(500)
+                    ->setViewDir(__DIR__ . '/Scripts')
+                    ->setViewFilename('error.phtml')
+                    ->setViewParams([
+                        'statusCode' => 500,
                         'exceptionMessage' => $e->getMessage()
                     ])
                     ->render();

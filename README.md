@@ -20,7 +20,7 @@ composer install
 
 [Grab the sample Yurly application](https://github.com/shaggy8871/yurly-sample-app)
 
-Example index.php file
+Example public/index.php file
 
 ```php
 <?php
@@ -35,6 +35,10 @@ $projects = [
 ];
 
 $app = new Yurly\Core\Init($projects);
+
+$app->onRouteNotFound(function(array \$data) {
+    // Handle 404 errors here
+});
 
 // Start 'em up
 $app->run();
@@ -231,4 +235,28 @@ $app->run();
 
 ```
 
-create a `Controllers` directory within both `/src/Site1` and `/src/Site2` and add your Index.php controller class. You may also create `Models`, `Views` and any other directories as may be required.
+Create a `Controllers` directory within both `/src/Site1` and `/src/Site2` and add your Index.php controller class. You may also create `Models`, `Views` and any other directories as may be required.
+
+## Using `ymake` helper:
+
+Yurly ships with a helper application called `ymake`. You can use the helper to create a project, set of controller, model and view files, or an index.php file.
+
+1. Add an autoload namespace to composer.json, for example:
+
+```json
+    "autoload": {
+        "psr-4": {
+            "Site1\\": "src/Site1/"
+        }
+    }
+```
+
+2. Run the appropriate command to generate scripts:
+
+| Command | Creates | Notes |
+|-----|-----------|-------|
+| `vendor/bin/ymake project` | A full project, including an Index controller |
+| `vendor/bin/ymake controller` | A controller, model and view | Project must exist first |
+| `vendor/bin/ymake index` | An index.php file |
+
+You will be prompted for further details based on the command used.

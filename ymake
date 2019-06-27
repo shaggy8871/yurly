@@ -96,6 +96,46 @@ switch ($argv[1]) {
         createController($project, $namespace, $controller);
         break;
 
+    case 'index':
+        echo "\n";
+        echo "Which project(s) do you want to add to your index.php file?\n";
+        $projectClasses = array_values($autoloadClasses);
+        foreach($projectClasses as $k => $path) {
+            echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
+        }
+        $project = readline("\nSelect project, * for ALL, or 0 to cancel: ");
+        if (!$project) {
+            echo "\n";
+            exit(0);
+        }
+        if ($project != '*' && !isset($projectClasses[$project - 1])) {
+            echo sprintf("  ❌  '%d' is not a valid option.\n\n", $project);
+            exit(1);
+        }
+        if ($project != '*') {
+            $namespace = rtrim(array_search($projectClasses[$project - 1], $autoloadClasses), '\\');
+            $projects = [
+                $namespace => $projectClasses[$project - 1]
+            ];
+        } else {
+            $projects = $autoloadClasses;
+        }
+        $dir = readline("Which directory do you want to create an index file in? ");
+        if (!$dir) {
+            echo "\n";
+            exit(0);
+        }
+        if (!file_exists($dir)) {
+            echo sprintf("  ❌  The directory '%s' does not exist.\n\n", $dir);
+            exit(1);
+        }
+        if (file_exists($dir . '/index.php')) {
+            echo sprintf("  ❌  An index.php file already exists in directory '%s'.\n\n", $dir);
+            exit(1);
+        }
+        createIndex($dir, $projects);
+        break;
+
     default:
         instructions();
         break;
@@ -106,8 +146,8 @@ function instructions()
     echo "      Usage: ./make <thing>\n";
     echo "             <thing> what thing you want to create:\n";
     echo "             - project\n";
-    echo "             - index\n";
     echo "             - controller\n";
+    echo "             - index\n";
     echo "\n";
     exit(1);
 }
@@ -155,8 +195,20 @@ function createController(string $project, string $namespace, string $controller
 
 }
 
+function createIndex(string $dir, array $autoloadClasses): void
+{
+
+    file_put_contents($dir . '/index.php', getIndex($dir, $autoloadClasses));
+
+    echo "\n";
+    echo sprintf("  ✅  Created %s/index.php\n", $dir);
+    echo "\n";
+
+}
+
 function getController(string $namespace, string $controller): string
 {
+
     return <<<EOT
 <?php declare(strict_types=1);
 
@@ -184,10 +236,12 @@ class $controller extends Controller
 
 }
 EOT;
+
 }
 
 function getModel(string $namespace, string $controller): string
 {
+
     return <<<EOT
 <?php declare(strict_types=1);
 
@@ -216,10 +270,12 @@ class $controller extends Controller
 
 }
 EOT;
+
 }
 
 function getViewBase(): string
 {
+
     return <<<EOT
 <html>
     <head>
@@ -232,10 +288,12 @@ function getViewBase(): string
     </body>
 </html>
 EOT;
+
 }
 
 function getView(): string
 {
+
     return <<<EOT
 {% extends "base.html.twig" %}
 
@@ -247,4 +305,35 @@ function getView(): string
 
 {% endblock %}
 EOT;
+
+}
+
+function getIndex(string $dir, array $autoloadClasses): string
+{
+
+    $relativeRefs = array_fill(0, count(explode('/', $dir)), '../');
+    $curDir = rtrim(implode('', $relativeRefs), '/');
+
+    $projects = '';
+    foreach($autoloadClasses as $namespace => $path) {
+        $namespace = rtrim($namespace, '\\');
+        $path = str_replace('/' . $namespace, '', rtrim($path, '/'));
+        $projects .= "\n\t'www." . strtolower($namespace) . ".com' => ['" . $namespace . "', '" . $path . "', true],";
+    }
+
+    return <<<EOT
+<?php
+include_once "$curDir/vendor/autoload.php";
+
+\$projects = [$projects
+];
+
+\$app = new Yurly\Core\Init(\$projects);
+\$app->onRouteNotFound(function(array \$data) {
+    // Handle 404 errors here
+});
+\$app->run();
+
+EOT;
+
 }
