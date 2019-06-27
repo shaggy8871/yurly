@@ -4,6 +4,8 @@
 
 Yurly is a lightweight web MVC routing library for PHP 7. It's easy to get started, requires almost zero configuration, and can run within existing projects without a major rewrite.
 
+It also supports a multi-site implementation right out of the box.
+
 Installation:
 
 In composer.json:
@@ -17,8 +19,6 @@ Then run:
 ```
 composer install
 ```
-
-[Grab the sample Yurly application](https://github.com/shaggy8871/yurly-sample-app)
 
 Example public/index.php file
 
@@ -45,7 +45,7 @@ $app->run();
 
 ```
 
-## Controller example:
+## Basic Routing
 
 By default, routes are determined based on the controller class name and method name.
 
@@ -115,7 +115,7 @@ class Index extends Controller
 
 ```
 
-## Route parameters:
+## Route Parameters
 
 Route parameters can be specified using a `@canonical` docblock statement above the route.
 
@@ -157,7 +157,7 @@ In the example above, calling /example/hello/world will return a JSON response a
 }
 ```
 
-## Accepting multiple request types:
+## Accepting Multiple Request Types
 
 The generic `Request` class has helper functions that can be used to extract multiple request types.
 
@@ -191,7 +191,139 @@ class Example extends Controller
 
 ```
 
-## Multi-site example:
+## Middleware
+
+You can have Yurly call a method before each route to check if it should proceed. The `@before` docblock can be used to control or restrict the flow as needed.
+
+Return an alternative route in the format `Controller::method` to have it render content from another controller/route method.
+
+```php
+<?php
+
+namespace Myapp\Middleware;
+
+use Frame\Core\{Url, Context};
+
+trait Auth
+{
+
+    public function isLoggedIn(Url $url, Context $context)
+    {
+
+        $caller = $context->getCaller();
+        $annotations = $caller->getAnnotations();
+
+        // The @role docblock isn't required, it's a suggestion
+        $roles = [];
+        if (isset($annotations['role'])) {
+            $roles = explode(', ', $annotations['role']);
+        }
+
+        if (!$this->authenticate($roles)) {
+            return 'User::routeLogout';
+        }
+
+    }
+
+    private function authenticate(array $roles): bool
+    {
+
+        // Add your auth code here
+
+    }
+
+}
+
+...
+
+<?php
+
+namespace Myapp\Controllers;
+
+use Yurly\Inject\Request\Get;
+use Yurly\Inject\Response\Twig;
+use Myapp\Middleware\Auth;
+
+class Admin
+{
+
+    use Auth;
+
+    /**
+     * @before isLoggedIn
+     * @role admin
+     */
+    public function routeDefault(Get $request, Twig $response): array
+    {
+
+        return [
+            'message' => 'Welcome!'
+        ];
+
+    }
+
+}
+
+```
+
+## Custom Request/Response Classes
+
+Custom Request and Response classes may be created to supply additional functionality not already supplied by the built-in classes. Examples include additional input sources, improved input sanitisation and custom models.
+
+```php
+<?php
+
+namespace Myapp\Inject\Request;
+
+use Yurly\Core\Context;
+use Yurly\Inject\Request\Request;
+
+class FilteredRequest extends Request
+{
+
+    public function __construct(Context $context)
+    {
+
+        parent::__construct($context);
+
+        // Filter inputs
+        foreach($this->get() as &$param) {
+            $param = filter_var($param, FILTER_SANITIZE_STRING);
+        }
+        foreach($this->post() as &$param) {
+            $param = filter_var($param, FILTER_SANITIZE_STRING);
+        }
+
+    }
+
+}
+
+...
+
+<?php
+
+namespace Myapp\Controllers;
+
+use Myapp\Inject\Request\FilteredRequest;
+use Yurly\Inject\Response\Json;
+
+class Rest
+{
+
+    public function routeDefault(FilteredRequest $request, Json $response): array
+    {
+
+        return [
+            'filteredInputs' => $request->get()->toArray() // now filtered
+        ];
+
+    }
+
+}
+
+```
+
+## Multi-site Setup
 
 In composer.json, add a `psr-4` autoload for each unique namespace, for example:
 
@@ -237,7 +369,7 @@ $app->run();
 
 Create a `Controllers` directory within both `/src/Site1` and `/src/Site2` and add your Index.php controller class. You may also create `Models`, `Views` and any other directories as may be required.
 
-## Using `ymake` helper:
+## Using `ymake` Helper
 
 Yurly ships with a helper application called `ymake`. You can use the helper to create a project, set of controller, model and view files, or an index.php file.
 
