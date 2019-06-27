@@ -1,0 +1,35 @@
+{
+    "name": "shaggy8871/yurly",
+    "description": "Yurly is a lightweight MVC routing library for PHP 7",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "J. Ginsberg",
+            "email": "john.ginsberg@tristadeca.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=7.1.0",
+        "twig/twig": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Yurly\\": "src/Yurly/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/Tests/",
+            "Site1\\": "tests/Yurly/_sites/Site1/",
+            "Site2\\": "tests/Yurly/_sites/Site2/"
+        }
+    },
+    "bin": [
+        "make"
+    ]
+}

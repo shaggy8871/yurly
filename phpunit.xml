@@ -1,0 +1,7 @@
+<phpunit bootstrap="./tests/Bootstrap.php">
+    <testsuites>
+        <testsuite name="shaggy8871\\yurly">
+            <directory>./tests</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
