@@ -4,6 +4,7 @@ namespace Yurly\Tests\Controllers;
 
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\RouteParams;
+use Yurly\Inject\Response\Html;
 
 class Products extends Controller
 {

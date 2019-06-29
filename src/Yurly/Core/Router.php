@@ -57,30 +57,36 @@ class Router
         // Attempt 1: Look for RouteResolver type class in project and instantiate
         $method = 'resolve';
         $controller = $this->project->ns . '\\RouteResolver';
-        if (class_exists($controller) and $controller instanceof RouteResolverInterface) {
+        if (class_exists($controller)) {
 
-            // Call the resolve() method
-            $route = call_user_func(array(new $controller($this->project), $method), $this->project, $this->url);
+            $routeResolver = new $controller($this->project);
 
-            // If we get a string back in format $controller::$method, look for the method
-            // If the return class method starts with "\" char, look outside the project controller tree
-            if ((is_string($route)) && (strpos($route, '::') !== false)) {
-                list($controller, $method) = explode('::', ($route[0] != '\\' ? $projectControllers : '') . $route);
-                if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
-                    return $this->invokeClassMethod(new $controller($this->project), $method);
-                }
-            }
+            if ($routeResolver instanceof RouteResolverInterface) {
 
-            // Otherwise, if we get a closure back, call it
-            if (is_callable($route)) {
-                if ((is_array($route)) && (count($route) == 2)) {
-                    return $this->invokeClassMethod($route[0], $route[1]);
-                } else {
-                    $reflection = new \ReflectionFunction($route);
-                    if ($reflection->isClosure()) {
-                        return $this->invokeFunction($route);
+                // Call the resolve() method
+                $route = call_user_func(array($routeResolver, $method), $this->project, $this->url);
+
+                // If we get a string back in format $controller::$method, look for the method
+                // If the return class method starts with "\" char, look outside the project controller tree
+                if ((is_string($route)) && (strpos($route, '::') !== false)) {
+                    list($controller, $method) = explode('::', ($route[0] != '\\' ? $projectControllers : '') . $route);
+                    if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
+                        return $this->invokeClassMethod(new $controller($this->project), $method);
                     }
                 }
+
+                // Otherwise, if we get a closure back, call it
+                if (is_callable($route)) {
+                    if ((is_array($route)) && (count($route) == 2)) {
+                        return $this->invokeClassMethod($route[0], $route[1]);
+                    } else {
+                        $reflection = new \ReflectionFunction($route);
+                        if ($reflection->isClosure()) {
+                            return $this->invokeFunction($route);
+                        }
+                    }
+                }
+
             }
 
         }
@@ -149,7 +155,7 @@ class Router
         $path = $pathComponents;
         $method = self::ROUTE_NOTFOUND;
         $controller = $this->findController((empty($path) ? 'Index' : $path[0]));
-        if ((class_exists($controller)) && (is_callable($controller . '::' . $method))) {
+        if (($controller) && (class_exists($controller)) && (is_callable($controller . '::' . $method))) {
             return (new $controller($this->project))->$method($this->url, $this->project);
         }
 

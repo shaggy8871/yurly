@@ -18,12 +18,12 @@ final class Canonical
         $requiredKeys = !is_array($requiredKeys) ? [] : $requiredKeys;
 
         // Remove all characters we don't understand
-        if (preg_replace('/[^A-Za-z0-9():_\/]/', '', $urlTemplate) != $urlTemplate) {
-            throw new URLParseException("Canonical docblock contains unparseable characters.");
+        if (preg_replace('/[^A-Za-z0-9():_.\/]/', '', $urlTemplate) != $urlTemplate) {
+            throw new URLParseException("Canonical docblock contains unparseable characters." . $urlTemplate);
         }
 
         return '/^' . str_replace('/', '\/',
-            preg_replace_callback('/([\/\(]*)(\()?:([A-Za-z0-9_]+)([\)]*)?/',
+            preg_replace_callback('/([\/\(]*)(\()?:([A-Za-z0-9_.]+)([\)]*)?/',
                 function($matches) use (&$keys, &$requiredKeys) {
                     if ($matches[1] == '/') {
                         $keys[] = $matches[3];

@@ -53,12 +53,12 @@ By default, routes are determined based on the controller class name and method 
 | URL | Routes To | Notes |
 |-----|-----------|-------|
 | `/` | `Index/routeDefault` |
-| `/about` | `Index/routeAbout` or `About/routeIndex` | Yurly will try both |
+| `/about` | `About/routeIndex` or `Index/routeAbout` | Yurly will try both in order |
 | `/about/our-story` | `About/routeOur_Story` | "-" is auto-converted to "_" |
 
 Controllers must extend the `Yurly\Core\Controller` class, and must contain at least one method name prefixed with the word `route`.
 
-> `Request` and `Response` classes can be injected into any method. The first `Response` class found will be used to render any value returned from the `route*` method. If nothing is returned, no content will be output.
+> `Request` and `Response` classes can be injected into any route method. The first `Response` class found will be used to render any value returned from the `route*` method. If nothing is returned, no content will be output.
 
 ```php
 <?php
@@ -234,18 +234,18 @@ trait Auth
     }
 
 }
-
-...
-
+```
+```php
 <?php
 
 namespace Myapp\Controllers;
 
+use Yurly\Core\Controller;
 use Yurly\Inject\Request\Get;
 use Yurly\Inject\Response\Twig;
 use Myapp\Middleware\Auth;
 
-class Admin
+class Admin extends Controller
 {
 
     use Auth;
@@ -298,17 +298,17 @@ class FilteredRequest extends Request
     }
 
 }
-
-...
-
+```
+```php
 <?php
 
 namespace Myapp\Controllers;
 
 use Myapp\Inject\Request\FilteredRequest;
+use Yurly\Core\Controller;
 use Yurly\Inject\Response\Json;
 
-class Rest
+class Rest extends Controller
 {
 
     public function routeDefault(FilteredRequest $request, Json $response): array
@@ -322,6 +322,44 @@ class Rest
 
 }
 
+```
+
+## Custom Route Resolvers
+
+If you have routes that don't easy follow the controller/method approach, it's easy to create a custom route resolver class that can handle custom routing.
+
+Create a class called `RouteResolver` at the base of your project directory, and ensure it `implements RouteResolverInterface`. It must contain one method called `resolve` that returns a route in the format `Controller::method`. Any other return value will be ignored.
+
+```php
+namespace Myapp;
+
+use Yurly\Core\{Project, Url};
+use Yurly\Core\Interfaces\RouteResolverInterface;
+use Yurly\Core\Utils\RegExp;
+
+class RouteResolver implements RouteResolverInterface
+{
+
+    public function resolve(Project $project, Url $url)
+    {
+
+        $routes = [
+            [
+                'match' => new RegExp('/^\/[a-z0-9]+\/product\/[a-z0-9]+\/?$/'),
+                'route' => 'Products::routeSearch',
+            ],
+            //... add your match/routes here
+        ];
+
+        foreach($routes as $i => $route) {
+            if ($route['match']->matches($url->requestUri)) {
+                return $route['route'];
+            }
+        }
+
+    }
+
+}
 ```
 
 ## Multi-site Setup

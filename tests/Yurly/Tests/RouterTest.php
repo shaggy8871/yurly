@@ -7,7 +7,10 @@ use Yurly\Core\Project;
 use Yurly\Core\Url;
 use Yurly\Core\UrlFactory;
 use Yurly\Core\Router;
-use Yurly\Core\Exception\ClassNotFoundException;
+use Yurly\Core\Exception\{
+    ClassNotFoundException,
+    RouteNotFoundException
+};
 
 class RouterTest extends TestCase
 {
@@ -80,7 +83,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('RouteDefault');
 
-        $this->router->parseUrl($this->generateUrl('/'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/'));
 
     }
 
@@ -89,7 +92,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(json_encode(['json' => true]));
 
-        $this->router->parseUrl($this->generateUrl('/jsonResponse'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/jsonResponse'));
 
     }
 
@@ -98,7 +101,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(sprintf('%s(%s)', 'jsonp', json_encode(['jsonp' => true])));
 
-        $this->router->parseUrl($this->generateUrl('/jsonpResponse'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/jsonpResponse'));
 
     }
 
@@ -107,7 +110,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputRegex("/RouteTwigResponseOkay/");
 
-        $this->router->parseUrl($this->generateUrl('/twigResponse'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/twigResponse'));
 
     }
 
@@ -116,7 +119,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(json_encode(['id' => '123', 'slug' => 'sluggish']));
 
-        $this->router->parseUrl($this->generateUrl('/urlParamsRequest/123/sluggish'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlParamsRequest/123/sluggish'));
 
     }
 
@@ -125,7 +128,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(json_encode(['id' => '123', 'slug' => 'sluggish spaces']));
 
-        $this->router->parseUrl($this->generateUrl('/urlParamsRequest/123/sluggish%20spaces'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlParamsRequest/123/sluggish%20spaces'));
 
     }
 
@@ -134,7 +137,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(json_encode(['id' => '123', 'slug' => '192.168.76.1']));
 
-        $this->router->parseUrl($this->generateUrl('/urlParamsRequest/123/192.168.76.1'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlParamsRequest/123/192.168.76.1'));
 
     }
 
@@ -143,7 +146,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('ProductsRouteDefault');
 
-        $this->router->parseUrl($this->generateUrl('/products'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products'));
 
     }
 
@@ -152,7 +155,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('ProductsRouteDefault');
 
-        $this->router->parseUrl($this->generateUrl('/products/'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/'));
 
     }
 
@@ -161,7 +164,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('ProductsRouteSubDir');
 
-        $this->router->parseUrl($this->generateUrl('/products/subdir'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/subdir'));
 
     }
 
@@ -170,7 +173,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('ProductsRouteSubDir');
 
-        $this->router->parseUrl($this->generateUrl('/products/subdir/'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/subdir/'));
 
     }
 
@@ -179,7 +182,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('CaseTestRouteDefault');
 
-        $this->router->parseUrl($this->generateUrl('/CaSetESt'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/CaSetESt'));
 
     }
 
@@ -188,7 +191,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('CaseTestRouteSubDir');
 
-        $this->router->parseUrl($this->generateUrl('/CaSetESt/SuBDir'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/CaSetESt/SuBDir'));
 
     }
 
@@ -197,7 +200,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('CaseTestRouteNumbers99');
 
-        $this->router->parseUrl($this->generateUrl('/CaSetESt/99'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/CaSetESt/99'));
 
     }
 
@@ -205,7 +208,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/urlDestination/val');
-        $this->router->parseUrl($this->generateUrl('/urlFor'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlFor'));
 
     }
 
@@ -213,7 +217,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/');
-        $this->router->parseUrl($this->generateUrl('/urlForHome'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForHome'));
 
     }
 
@@ -221,7 +226,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/urldestinationautodetect');
-        $this->router->parseUrl($this->generateUrl('/urlforautodetect1'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlforautodetect1'));
 
     }
 
@@ -229,7 +235,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/products/urldestinationautodetect');
-        $this->router->parseUrl($this->generateUrl('/urlforautodetect2'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlforautodetect2'));
 
     }
 
@@ -237,7 +244,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('routeUrlDestinationCanonical');
-        $this->router->parseUrl($this->generateUrl('/differentName'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/differentName'));
 
     }
 
@@ -245,7 +253,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('ProductsRouteUrlDestinationCanonical99');
-        $this->router->parseUrl($this->generateUrl('/products/canonical/99'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/canonical/99'));
 
     }
 
@@ -253,7 +262,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/urlParamsRequest/123/slugger');
-        $this->router->parseUrl($this->generateUrl('/urlForFallback1'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForFallback1'));
 
     }
 
@@ -261,7 +271,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/products/urlDestination/val');
-        $this->router->parseUrl($this->generateUrl('/urlForFallback2'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForFallback2'));
 
     }
 
@@ -269,7 +280,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/urlDestination/val/suffix');
-        $this->router->parseUrl($this->generateUrl('/urlForSuffix'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForSuffix'));
 
     }
 
@@ -277,7 +289,8 @@ class RouterTest extends TestCase
     {
 
         $this->expectOutputString('/urlDestination/another-val.json');
-        $this->router->parseUrl($this->generateUrl('/urlForExtension'));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForExtension'));
 
     }
 
@@ -286,7 +299,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputRegex("/RouteTwigResponse: \/urlDestination\/val: \/products\/urlDestination\/val/");
 
-        $this->router->parseUrl($this->generateUrl('/twigUrlFor'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/twigUrlFor'));
 
     }
 
@@ -295,7 +308,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString(json_encode(['with' => 'flash']));
 
-        $this->router->parseUrl($this->generateUrl('/flash'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/flash'));
 
     }
 
@@ -304,7 +317,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('TestsModelsInject');
 
-        $this->router->parseUrl($this->generateUrl('/testsmodelsinject'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/testsmodelsinject'));
 
     }
 
@@ -313,7 +326,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('TestsModelsInstantiateRequest');
 
-        $this->router->parseUrl($this->generateUrl('/testsmodelsinstantiaterequest'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/testsmodelsinstantiaterequest'));
 
     }
 
@@ -322,7 +335,7 @@ class RouterTest extends TestCase
 
         $this->expectException(ClassNotFoundException::class);
 
-        $this->router->parseUrl($this->generateUrl('/withInvalidInjectionClass'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/withInvalidInjectionClass'));
 
     }
 
@@ -331,7 +344,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('routeAuthOkay');
 
-        $this->router->parseUrl($this->generateUrl('/auth/allowed'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/auth/allowed'));
 
     }
 
@@ -340,7 +353,7 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('routeNotAuthorized');
 
-        $this->router->parseUrl($this->generateUrl('/auth/notallowed'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/auth/notallowed'));
 
     }
 
@@ -349,22 +362,53 @@ class RouterTest extends TestCase
 
         $this->expectOutputString('routeIndexNotAuthorized');
 
-        $this->router->parseUrl($this->generateUrl('/auth/notallowedoutside'));
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/auth/notallowedoutside'));
+
+    }
+
+    public function testRouteResolverPath1()
+    {
+
+        $this->expectOutputString('ProductsRouteDefault');
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/generic/123/product'));
+
+    }
+
+    public function testRouteResolverPath2()
+    {
+
+        $this->expectOutputString('ProductsRouteSubDir');
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/123/product/finder'));
+
+    }
+
+    public function testRouteResolverPathFailure()
+    {
+
+        $this->expectException(RouteNotFoundException::class);
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/AAA/product/finder'));
 
     }
 
     public static function setUpBeforeClass(): void
     {
 
-        exec("mkdir " . __DIR__ . "/Views/cache");
-        exec("chmod 777 " . __DIR__ . "/Views/cache");
+        if (!file_exists(__DIR__ . "/Views/cache")) {
+            exec("mkdir " . __DIR__ . "/Views/cache");
+            exec("chmod 777 " . __DIR__ . "/Views/cache");
+        }
 
     }
 
     public static function tearDownAfterClass(): void
     {
 
-        exec("rm -rf " . __DIR__ . "/Views/cache");
+        if (file_exists(__DIR__ . "/Views/cache")) {
+            exec("rm -rf " . __DIR__ . "/Views/cache");
+        }
 
     }
 
@@ -374,11 +418,12 @@ class RouterTest extends TestCase
     private function generateUrl(string $requestUri): Url
     {
 
-        $pathComponents = explode('/', substr($requestUri, 1));
+        $parsedUrl = parse_url($requestUri);
 
         return new Url([
-            'pathComponents' => $pathComponents,
-            'requestUri' => $requestUri
+            'host' => $parsedUrl['host'],
+            'pathComponents' => explode('/', substr($parsedUrl['path'], 1)),
+            'requestUri' => $parsedUrl['path'],
         ]);
 
     }
