@@ -15,7 +15,7 @@ class RequestTest extends TestCase
         // Instantiate test variables
         parse_str('var1=1&var2=two', $_GET);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project);
         $request = new \Yurly\Inject\Request\Get($ctx);
 
@@ -34,7 +34,7 @@ class RequestTest extends TestCase
         // Instantiate test variables
         parse_str('var1=1&var2=two', $_POST);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project);
         $request = new \Yurly\Inject\Request\Post($ctx);
 
@@ -50,7 +50,7 @@ class RequestTest extends TestCase
     public function testPutIsset()
     {
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project);
         $request = new \Yurly\Inject\Request\Put($ctx);
         $request->setProps([
@@ -70,7 +70,7 @@ class RequestTest extends TestCase
     public function testDeleteIsset()
     {
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project);
         $request = new \Yurly\Inject\Request\Delete($ctx);
         $request->setProps([
@@ -95,7 +95,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/:var1/:var2'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -118,7 +118,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/$$var1--'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -134,7 +134,7 @@ class RequestTest extends TestCase
             'canonical' => ':one/:two/:three'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -148,7 +148,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/:withUpper/:with_underscore/:withNum1(/:notHere)'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -171,7 +171,7 @@ class RequestTest extends TestCase
             'canonical' => '/longer/prefix/test/:one/:two/:three'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -192,7 +192,7 @@ class RequestTest extends TestCase
             'canonical' => '/test(/:optional)'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -211,7 +211,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/:mandatory(/:optional)'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -225,7 +225,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/:mandatory(/:optional1(/:optional2))'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
@@ -246,7 +246,7 @@ class RequestTest extends TestCase
             'canonical' => '/test/:mandatory(/:optional1)(/:optional2)'
         ]);
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 

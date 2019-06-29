@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-/*
+/**
  * This is where most of the magic happens
  */
 
@@ -11,24 +11,22 @@ use Yurly\Core\Exception\{
     RouteNotFoundException,
     ClassNotFoundException
 };
+use Yurly\Core\Interfaces\RouteResolverInterface;
 
 class Router
 {
 
-    const ROUTE_RESOLVER = 'routeResolver';
     const ROUTE_NOTFOUND = 'routeNotFound';
     const ROUTE_DEFAULT  = 'routeDefault';
-    const NO_GLOB = false;
 
     private $project;
     private $url;
     private $caller;
 
-    public function __construct(Project $project, Url $url = null)
+    public function __construct(Project $project)
     {
 
         $this->project = $project;
-        $this->url = $url;
 
     }
 
@@ -44,7 +42,7 @@ class Router
         }
 
         if (!($this->url instanceof Url)) {
-            throw new ConfigException('No Url instance supplied for parser.');
+            throw new ConfigException($this->project, 'No Url instance supplied for parser.');
         }
 
         $pathComponents = $this->url->pathComponents;
@@ -56,28 +54,13 @@ class Router
 
         $projectControllers = $this->project->ns . '\\Controllers\\';
 
-        // Attempt 1: Look for Routes class in project and call routeResolver method
-        $method = self::ROUTE_RESOLVER;
-        $controller = $this->project->ns . '\\Routes';
-        if (method_exists($controller, $method)) {
+        // Attempt 1: Look for RouteResolver type class in project and instantiate
+        $method = 'resolve';
+        $controller = $this->project->ns . '\\RouteResolver';
+        if (class_exists($controller) and $controller instanceof RouteResolverInterface) {
 
-            // Call the project routeResolver method
-            $route = call_user_func(array(new $controller($this->project), $method), $this->url);
-
-            // If we get a class name back, look for another routeResolver method within
-            if ((is_string($route)) && (strpos($route, '::') === false) && (class_exists($projectControllers . $route)) && (method_exists($projectControllers . $route, $method))) {
-                $savedRoute = $route;
-                $routeController = $projectControllers . $route;
-                $controllerClass = new $routeController($this->project);
-                // Call routeResolver in the controller class
-                $route = call_user_func(array($controllerClass, $method), $this->url);
-                // If I get a partial string result, assume it's a method response, otherwise prepare for fallback
-                if ((is_string($route)) && (strpos($route, '::') === false) && (is_callable(array($controllerClass, $route)))) {
-                    return $this->invokeClassMethod($controllerClass, $route);
-                } else {
-                    $pathComponents[0] = $savedRoute;
-                }
-            }
+            // Call the resolve() method
+            $route = call_user_func(array(new $controller($this->project), $method), $this->project, $this->url);
 
             // If we get a string back in format $controller::$method, look for the method
             // If the return class method starts with "\" char, look outside the project controller tree
@@ -102,51 +85,13 @@ class Router
 
         }
 
-        // Attempt 2: pointing to a controller with a routeResolver method
-        $path = $pathComponents;
-        $method = self::ROUTE_RESOLVER;
-        $controller = $projectControllers . (empty($path) ? 'Index' : $path[0]);
-        $controllerClass = (class_exists($controller) ? new $controller($this->project) : null);
-        if (($controllerClass) && (method_exists($controllerClass, $method))) {
-
-            // Call routeResolver in the controller class
-            $route = call_user_func(array($controllerClass, $method), $this->url);
-
-            // If we get a string back in format $controller::$method, look for the method
-            // If the return class method starts with "\" char, look outside the project controller tree
-            if ((is_string($route)) && (strpos($route, '::') !== false)) {
-                list($controller, $method) = explode('::', ($route[0] != '\\' ? $projectControllers : '') . $route);
-                if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
-                    return $this->invokeClassMethod(new $controller($this->project), $method);
-                }
-            }
-
-            // If we get a partial string result, assume it's a method response
-            if ((is_string($route)) && (strpos($route, '::') === false) && (is_callable(array($controllerClass, $route)))) {
-                return $this->invokeClassMethod($controllerClass, $route);
-            }
-
-            // Otherwise, if we get a closure back, call it
-            if (is_callable($route)) {
-                if ((is_array($route)) && (count($route) == 2)) {
-                    return $this->invokeClassMethod($route[0], $route[1]);
-                } else {
-                    $reflection = new \ReflectionFunction($route);
-                    if ($reflection->isClosure()) {
-                        return $this->invokeFunction($route);
-                    }
-                }
-            }
-
-        }
-
-        // Attempt 3: pointing to a specific route* method within the controller
+        // Attempt 2: pointing to a specific route* method within the controller
         if (count($pathComponents) > 1) {
             $path = $pathComponents;
             $controllerClass = array_shift($path);
             $methodName = array_shift($path);
             $method = ($methodName != null ? 'route' . $methodName : self::ROUTE_DEFAULT);
-            $controller = $this->findController($controllerClass, self::NO_GLOB);
+            $controller = $this->findController($controllerClass);
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
@@ -155,12 +100,12 @@ class Router
             }
         }
 
-        // Attempt 4: check for a controller with routeDefault method
+        // Attempt 3: check for a controller with routeDefault method
         if (count($pathComponents) == 1) {
             $path = $pathComponents;
             $lookupName = array_shift($path);
             $method = self::ROUTE_DEFAULT;
-            $controller = $this->findController($lookupName, self::NO_GLOB);
+            $controller = $this->findController($lookupName);
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
@@ -169,7 +114,7 @@ class Router
             }
         }
 
-        // Attempt 5: look for a method in the Index controller
+        // Attempt 4: look for a method in the Index controller
         $path = $pathComponents;
         $lookupName = array_shift($path);
         $method = ($lookupName ? 'route' . $lookupName : self::ROUTE_DEFAULT);
@@ -525,7 +470,7 @@ class Router
             // If the parameter doesn't allow null values, throw an error to prevent
             // the compiler from doing so
             if (($paramInstance == null) && (!$param->allowsNull())) {
-                throw new ConfigException("Method " . $paramClass->name . "::createFromRequest returned null or a non-object, and Request parameter does not accept nulls.");
+                throw new ConfigException($this->project, sprintf("Method %s::createFromRequest returned null or a non-object, and Request parameter does not accept nulls.", $paramClass->name));
             }
 
             return $paramInstance;
@@ -581,7 +526,7 @@ class Router
     /*
      * Find a controller that matches the name specified
      */
-    private function findController($controller, bool $globSearch = true): ?string
+    private function findController($controller): ?string
     {
 
         if (!$controller) {
@@ -594,24 +539,7 @@ class Router
             return $projectControllers . $controller;
         }
 
-        if (!$globSearch) {
-            return null;
-        }
-
-        // Fallback
-        $glob = '';
-        $controllerLength = strlen($controller);
-        for($i = 0; $i < $controllerLength; $i++) {
-            $glob .= '[' . strtolower($controller[$i]) . strtoupper($controller[$i]) . ']';
-        }
-
-        $glob = $this->project->path . '/Controllers/' . $glob . '.php';
-
-        // Use glob range search to find a case insensitive match
-        $match = glob($glob, GLOB_NOSORT);
-        if ($match) {
-            return $projectControllers . basename(array_shift($match), '.php');
-        }
+        return null;
 
     }
 

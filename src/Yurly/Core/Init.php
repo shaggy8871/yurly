@@ -3,6 +3,7 @@
 namespace Yurly\Core;
 
 use Yurly\Inject\Response\Phtml;
+use Yurly\Core\Utils\RegExp;
 use Yurly\Core\Exception\{
     ConfigException,
     UnknownPropertyException,
@@ -24,7 +25,7 @@ class Init
 
     }
 
-    /*
+    /**
      * Call a function if we are unable to find a route
      */
     public function onRouteNotFound(callable $callback): void
@@ -34,7 +35,7 @@ class Init
 
     }
 
-    /*
+    /**
      * Call a function if we are unable to parse a URL
      */
     public function onUrlParseError(callable $callback): void
@@ -44,7 +45,7 @@ class Init
 
     }
 
-    /*
+    /**
      * Run the project
      */
     public function run(): void
@@ -57,6 +58,31 @@ class Init
             $router = new Router($this->getProjectFromUrl($url));
             $router->parseUrl($url);
 
+        } catch (ConfigException $e) {
+
+            if ($e->getProject() instanceof Project) {
+
+                if ($e->getProject()->debugMode) {
+                    // Display a default error page
+                    $response = new Phtml($context);
+                    $response
+                        ->setStatusCode(404)
+                        ->setViewDir(__DIR__ . '/Scripts')
+                        ->setViewFilename('error.phtml')
+                        ->setViewParams([
+                            'statusCode' => 404,
+                            'exceptionMessage' => $e->getMessage()
+                        ])
+                        ->render();
+                } else {
+                    // ignore
+                }
+
+            } else {
+                // Re-throw exception
+                throw $e;
+            }
+
         } catch (RouteNotFoundException $e) {
 
             $context = new Context($e->getProject(), $e->getUrl());
@@ -68,7 +94,8 @@ class Init
                     'context' => $context,
                     'exceptionMessage' => $e->getMessage()
                 ]);
-            } else {
+            } else
+            if ($e->getProject()->debugMode) {
                 // Display a default error page
                 $response = new Phtml($context);
                 $response
@@ -80,36 +107,15 @@ class Init
                         'exceptionMessage' => $e->getMessage()
                     ])
                     ->render();
-            }
-
-        } catch (\Exception $e) {
-
-            if ($this->onUrlParseError) {
-                // Call the user defined route not found handler
-                call_user_func($this->onUrlParseError, [
-                    'statusCode' => 500,
-                    'context' => $context,
-                    'exceptionMessage' => $e->getMessage()
-                ]);
             } else {
-                // Display a default error page
-                $response = new Phtml($context);
-                $response
-                    ->setStatusCode(500)
-                    ->setViewDir(__DIR__ . '/Scripts')
-                    ->setViewFilename('error.phtml')
-                    ->setViewParams([
-                        'statusCode' => 500,
-                        'exceptionMessage' => $e->getMessage()
-                    ])
-                    ->render();
+                // ignore
             }
 
         }
 
     }
 
-    /*
+    /**
      * Allow read access only
      */
     public function __get(string $property)
@@ -123,40 +129,54 @@ class Init
 
     }
 
-    /*
+    /**
     * Determine the project folder from the url hostname
     */
     private function getProjectFromUrl(Url $url): Project
     {
 
-        if (array_key_exists($url->host, $this->projects)) {
-            return $this->createProject($this->projects[$url->host]);
-        } else {
-            throw new ConfigException('Cannot determine project path from host ' . $url->host);
+        foreach($this->projects as $k => $project) {
+
+            if ($project instanceof Project && $this->urlMatchesProject($url, $project)) {
+                return $project;
+            } else {
+                if (is_string($k) && is_array($project)) {
+                    $project = array_merge($project, array_fill(0, 2, false));
+                    list($ns, $path, $debugMode) = $project;
+                    if (!$ns) {
+                        throw new ConfigException(null, "Project configuration must have a namespace assigned");
+                    }
+                    return new Project($k, $ns, $path, $debugMode);
+                }
+            }
+
         }
+
+        throw new ConfigException(null, sprintf('Cannot determine project path from host %s', $url->host));
 
     }
 
-    /*
-    * Creates a project object
-    */
-    private function createProject($project): Project
+    /**
+     * Returns true if the URL matches this project
+     */
+    private function urlMatchesProject(Url $url, Project $project): bool
     {
 
-        if (is_a($project, 'Yurly\\Core\\Project')) {
-            return $project;
-        } else
-        if (is_array($project)) {
-            $project = array_merge($project, array_fill(0, 2, false));
-            list($ns, $path, $debugMode) = $project;
-            if (!$ns) {
-                throw new ConfigException("Project configuration must have a namespace assigned");
-            }
+        $hosts = $project->getHosts();
+
+        if (is_string($hosts) && $url->host == $hosts) {
+            return true;
         } else {
-            list($ns, $path, $debugMode) = array($project, '', false);
+            if (is_array($hosts) && in_array($url->host, $hosts)) {
+                return true;
+            } else {
+                if ($hosts instanceof RegExp && $hosts->matches($url->host)) {
+                    return true;
+                }
+            }
         }
 
-        return new Project($ns, $path, $debugMode);
+        return false;
 
     }
 

@@ -5,22 +5,34 @@ namespace Yurly\Core;
 class Project
 {
 
+    protected $hosts;
     protected $ns;
     protected $debugMode;
     protected $path;
     protected $config;
     protected $services;
 
-    public function __construct(string $ns, string $path = '', bool $debugMode = false)
+    public function __construct($hosts, string $ns, string $path = '', bool $debugMode = false)
     {
 
         $configClass = $ns . '\\Config';
 
+        $this->hosts = $hosts;
         $this->ns = $ns;
         $this->path = ($path ? realpath($path) . '/' : '') . str_replace('\\', '/', $ns);
         $this->debugMode = $debugMode;
         // Do we have a configuration class?
         $this->config = (class_exists($configClass) ? new $configClass($this) : new \stdClass());
+
+    }
+
+    /*
+     * Handy accessor to saved project hosts
+     */
+    public function getHosts()
+    {
+
+        return $this->hosts;
 
     }
 
@@ -65,24 +77,32 @@ class Project
     }
 
     /*
-     * Add a public service to the project
+     * Returns the public service container
      */
-    public function addService(string $name, $object): void
+    public function getService(string $name): ?\stdClass
     {
 
-        $this->services[$name] = $object;
+        return $this->services[$name] ?? null;
 
     }
 
     /*
-     * Returns the public service
+     * Handy accessor to update debug mode value
      */
-    public function getService(string $name)
+    public function setDebugMode(bool $debugMode): void
     {
 
-        if (isset($this->services[$name])) {
-            return $this->services[$name];
-        }
+        $this->debugMode = $debugMode;
+
+    }
+
+    /*
+     * Add a public service to the project
+     */
+    public function addService(string $name, \stdClass $object): void
+    {
+
+        $this->services[$name] = $object;
 
     }
 
@@ -92,7 +112,7 @@ class Project
     public function __get(string $property)
     {
 
-        return (in_array($property, ['ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
             $this->$property : null);
 
     }
@@ -103,7 +123,7 @@ class Project
     public function __isset(string $property): bool
     {
 
-        return (in_array($property, ['ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
             property_exists($this, $property) : false);
 
     }

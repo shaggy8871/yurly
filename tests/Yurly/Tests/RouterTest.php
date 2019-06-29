@@ -17,7 +17,7 @@ class RouterTest extends TestCase
     public function setUp(): void
     {
 
-        $this->router = new Router(new Project('Yurly\\Tests', 'tests', true));
+        $this->router = new Router(new Project('www.testyurly.com', 'Yurly\\Tests', 'tests', true));
 
     }
 

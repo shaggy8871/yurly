@@ -19,7 +19,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Yurly\\": "src/Yurly/"
+            "Yurly\\": "./src/Yurly/",
+            "John\\": "./src/John/"
         }
     },
     "autoload-dev": {

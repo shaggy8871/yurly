@@ -318,17 +318,19 @@ function getIndex(string $dir, array $autoloadClasses): string
     foreach($autoloadClasses as $namespace => $path) {
         $namespace = rtrim($namespace, '\\');
         $path = str_replace('/' . $namespace, '', rtrim($path, '/'));
-        $projects .= "\n\t'www." . strtolower($namespace) . ".com' => ['" . $namespace . "', '" . $path . "', true],";
+        $projects .= "\n\tnew Project('www." . strtolower($namespace) . ".com', '" . $namespace . "', '" . $path . "'),";
     }
 
     return <<<EOT
 <?php
 include_once "$curDir/vendor/autoload.php";
 
+use Yurly\Core\{Projects, Init};
+
 \$projects = [$projects
 ];
 
-\$app = new Yurly\Core\Init(\$projects);
+\$app = new Init(\$projects);
 \$app->onRouteNotFound(function(array \$data) {
     // Handle 404 errors here
 });

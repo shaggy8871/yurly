@@ -26,15 +26,16 @@ Example public/index.php file
 <?php
 include_once "../vendor/autoload.php";
 
-/*
- * Format:
- *    domain => [namespace, path, debugMode]
+use Yurly\Core\{Project, Init};
+
+/**
+ * Project($hostname, $namespace, $pathToNamespace)
  */
 $projects = [
-    $_SERVER['HTTP_HOST'] => ['Myapp', 'src', true],
+    new Project($_SERVER['HTTP_HOST'], 'Myapp', './src'),
 ];
 
-$app = new Yurly\Core\Init($projects);
+$app = new Init($projects);
 
 $app->onRouteNotFound(function(array \$data) {
     // Handle 404 errors here
@@ -333,7 +334,7 @@ In composer.json, add a `psr-4` autoload for each unique namespace, for example:
     "name": "example",
     "require": {
         "php": ">=7.2.0",
-        "shaggy8871/yurly": "^1.0",
+        "shaggy8871/yurly": "^2.0",
         "twig/twig": "^2.0"
     },
     "require-dev": {
@@ -341,26 +342,28 @@ In composer.json, add a `psr-4` autoload for each unique namespace, for example:
     },
     "autoload": {
         "psr-4": {
-            "Site1\\": "src/Site1/",
-            "Site2\\": "src/Site2/"
+            "Site1\\": "./src/Site1/",
+            "Site2\\": "./src/Site2/"
         }
     }
 }
 
 ```
 
-In index.php, enter a project row for each unique domain:
+In public/index.php, enter a project row for each unique domain:
 
 ```php
 <?php
 include_once "../vendor/autoload.php";
 
+use Yurly\Core\{Project, Init};
+
 $projects = [
-    'www.site1.com' => ['Site1', 'src', true],
-    'www.site2.com' => ['Site2', 'src', true],
+    new Project('www.site1.com', 'Site1', './src'),
+    new Project('www.site1.com', 'Site2', './src'),
 ];
 
-$app = new Yurly\Core\Init($projects);
+$app = new Init($projects);
 
 // Start 'em up
 $app->run();
@@ -368,6 +371,28 @@ $app->run();
 ```
 
 Create a `Controllers` directory within both `/src/Site1` and `/src/Site2` and add your Index.php controller class. You may also create `Models`, `Views` and any other directories as may be required.
+
+If you need to support multiple hosts for a project, you can either pass in an array of hosts, or use a `RegExp` helper class as follows:
+
+```php
+// Array of hosts per project:
+$projects = [
+    new Project(['www.site1.com', 'dev.site1.com'], 'Site1', './src'),
+    new Project(['www.site2.com', 'dev.site2.com'], 'Site2', './src'),
+];
+```
+
+or
+
+```php
+use Yurly\Core\Utils\RegExp;
+
+// RegExp helper class:
+$projects = [
+    new Project(new RegExp('/^.*\.site1\.com$/'), 'Site1', './src'),
+    new Project(new RegExp('/^.*\.site2\.com$/'), 'Site2', './src'),
+];
+```
 
 ## Using `ymake` Helper
 
@@ -378,7 +403,8 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 ```json
     "autoload": {
         "psr-4": {
-            "Site1\\": "src/Site1/"
+            "Site1\\": "./src/Site1/",
+            "Site2\\": "./src/Site2/",
         }
     }
 ```

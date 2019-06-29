@@ -12,7 +12,7 @@ class ResponseTest extends TestCase
 
         $this->expectOutputString('Hello world!');
 
-        $project = new \Yurly\Core\Project(__NAMESPACE__, 'tests', true);
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project);
         $response = new \Yurly\Inject\Response\Response($ctx);
         $response->setResponseClass(new \Yurly\Inject\Response\Html($ctx))
