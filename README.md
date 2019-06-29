@@ -326,7 +326,7 @@ class Rest extends Controller
 
 ## Custom Route Resolvers
 
-If you have routes that don't easy follow the controller/method approach, it's easy to create a custom route resolver class that can handle custom routing.
+If you have routes that don't follow the controller/method approach, it's easy to create a custom route resolver class that can handle custom routing.
 
 Create a class called `RouteResolver` at the base of your project directory, and ensure it `implements RouteResolverInterface`. It must contain one method called `resolve` that returns a route in the format `Controller::method`. Any other return value will be ignored.
 
@@ -351,7 +351,7 @@ class RouteResolver implements RouteResolverInterface
             //... add your match/routes here
         ];
 
-        foreach($routes as $i => $route) {
+        foreach($routes as $route) {
             if ($route['match']->matches($url->requestUri)) {
                 return $route['route'];
             }

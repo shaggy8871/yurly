@@ -23,7 +23,7 @@ class RouteResolver implements RouteResolverInterface
             ],
         ];
 
-        foreach($routes as $i => $route) {
+        foreach($routes as $route) {
             if ($route['match']->matches($url->requestUri)) {
                 return $route['route'];
             }
