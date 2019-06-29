@@ -53,7 +53,7 @@ By default, routes are determined based on the controller class name and method 
 | URL | Routes To | Notes |
 |-----|-----------|-------|
 | `/` | `Index/routeDefault` |
-| `/about` | `About/routeIndex` or `Index/routeAbout` | Yurly will try both in order |
+| `/about` | `About/routeDefault` or `Index/routeAbout` | Yurly will try both in order |
 | `/about/our-story` | `About/routeOur_Story` | "-" is auto-converted to "_" |
 
 Controllers must extend the `Yurly\Core\Controller` class, and must contain at least one method name prefixed with the word `route`.
