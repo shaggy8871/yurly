@@ -12,7 +12,7 @@ class UrlFactory
     /*
      * Autodetect URL settings and return a Url object
      */
-    public static function autodetect()
+    public static function autodetect(): Url
     {
 
         // Basic lookup
