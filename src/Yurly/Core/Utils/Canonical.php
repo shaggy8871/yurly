@@ -19,7 +19,7 @@ final class Canonical
 
         // Remove all characters we don't understand
         if (preg_replace('/[^A-Za-z0-9():_.\/]/', '', $urlTemplate) != $urlTemplate) {
-            throw new URLParseException("Canonical docblock contains unparseable characters." . $urlTemplate);
+            throw new URLParseException("Canonical docblock contains unparseable characters.");
         }
 
         return '/^' . str_replace('/', '\/',
