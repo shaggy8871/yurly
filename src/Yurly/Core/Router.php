@@ -33,7 +33,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Determine the target controller based on the url path
      */
     public function parseUrl(Url $url = null): bool
@@ -142,7 +142,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * When a route cannot be determined, fall back in a controlled sequence
      */
     private function routeNotFound(): bool
@@ -173,7 +173,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Calls the specified class method and injects parameters
      * @param $class controller class object
      * @param $method string method name
@@ -203,7 +203,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Calls the specified function or closure and injects parameters
      * @param $function the closure
      */
@@ -231,7 +231,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Calls the method or closure and injects parameters dynamically
      */
     private function invokeCallable($reflection, $class = null): bool
@@ -385,7 +385,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Allows an @after annotation to return a different response
      */
     private function afterCall(&$response, &$class = null): void
@@ -506,7 +506,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Returns true if it's a Request class
      */
     private function isRequestClass($class, bool $autoload = true): bool
@@ -516,7 +516,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Returns true if it's a Response class
      */
     private function isResponseClass($class, bool $autoload = true): bool
@@ -526,7 +526,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Special case for request parameters
      * If the parameter class contains a static createFromRequest method,
      * ask it to instantiate the class for us using the request data supplied.
@@ -571,7 +571,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Copied and modified from http://php.net/manual/en/reflectionparameter.getclass.php#108620
      */
     private function getParamClassName(\ReflectionParameter $param): ?string
@@ -582,7 +582,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Inject details into the response class. Not available for closures.
      */
     private function setResponseDefaults($responseClass, $reflection, $controllerClass = null): void
@@ -610,7 +610,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Find a controller that matches the name specified
      */
     private function findController($controller): ?string
@@ -630,7 +630,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Attempt to find the appropriate method to call
      */
     private function findMethod($controller, string $method): bool
@@ -653,7 +653,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Find a matching method using annotation matching
      */
     private function scanForMethodMatches($controller): ?string
@@ -678,7 +678,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Return the project
      */
     public function getProject(): Project
@@ -688,7 +688,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Return the parsed url class that we're using
      */
     public function getUrl(): Url
@@ -698,7 +698,7 @@ final class Router
 
     }
 
-    /*
+    /**
      * Return the caller information
      */
     public function getCaller(): Caller

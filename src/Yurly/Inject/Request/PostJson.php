@@ -7,7 +7,7 @@ use Yurly\Core\Context;
 class PostJson extends Post implements RequestInterface
 {
 
-    /*
+    /**
      * POST values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)

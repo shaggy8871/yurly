@@ -9,7 +9,7 @@ class Delete extends RequestFoundation implements RequestInterface
 
     protected $delete = [];
 
-    /*
+    /**
      * DELETE values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
@@ -23,7 +23,7 @@ class Delete extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Optional method to set the input manually
      */
     public function setProps(array $properties): void
@@ -33,7 +33,7 @@ class Delete extends RequestFoundation implements RequestInterface
         
     }
 
-    /*
+    /**
      * Return all properties as an array
      */
     public function toArray(): array
@@ -43,7 +43,7 @@ class Delete extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Magic getter method maps requests to the protected $delete property
      */
     public function __get(string $property)
@@ -53,7 +53,7 @@ class Delete extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Magic isset method maps requests to the protected $delete property
      */
     public function __isset(string $property): bool

@@ -5,7 +5,7 @@ namespace Yurly\Inject\Response;
 class StdOut extends ResponseFoundation implements ResponseInterface
 {
 
-    /*
+    /**
      * Render must send through a string
      */
     public function render($params = null): void

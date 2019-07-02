@@ -3,8 +3,8 @@
 namespace Yurly\Tests;
 
 use PHPUnit\Framework\TestCase;
-use Yurly\Core\{Url, Caller};
-use Yurly\Core\Exception\{URLParseException, MissingRouteParameterException};
+use Yurly\Core\{Project, Url, Context, Caller};
+use Yurly\Core\Exception\URLParseException;
 
 class RequestTest extends TestCase
 {
@@ -15,8 +15,9 @@ class RequestTest extends TestCase
         // Instantiate test variables
         parse_str('var1=1&var2=two', $_GET);
 
-        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
-        $ctx = new \Yurly\Core\Context($project);
+        $project = new Project('', __NAMESPACE__, 'tests', true);
+        $url = $this->generateUrl('/');
+        $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Get($ctx);
 
         $this->assertEquals(isset($request->var1), true);
@@ -34,8 +35,9 @@ class RequestTest extends TestCase
         // Instantiate test variables
         parse_str('var1=1&var2=two', $_POST);
 
-        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
-        $ctx = new \Yurly\Core\Context($project);
+        $project = new Project('', __NAMESPACE__, 'tests', true);
+        $url = $this->generateUrl('/');
+        $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Post($ctx);
 
         $this->assertEquals(isset($request->var1), true);
@@ -50,8 +52,9 @@ class RequestTest extends TestCase
     public function testPutIsset()
     {
 
-        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
-        $ctx = new \Yurly\Core\Context($project);
+        $project = new Project('', __NAMESPACE__, 'tests', true);
+        $url = $this->generateUrl('/');
+        $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Put($ctx);
         $request->setProps([
             'var1' => 1,
@@ -70,8 +73,9 @@ class RequestTest extends TestCase
     public function testDeleteIsset()
     {
 
-        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
-        $ctx = new \Yurly\Core\Context($project);
+        $project = new Project('', __NAMESPACE__, 'tests', true);
+        $url = $this->generateUrl('/');
+        $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Delete($ctx);
         $request->setProps([
             'var1' => 1,
@@ -204,8 +208,6 @@ class RequestTest extends TestCase
     public function testRouteParamsMandatoryFirstOptionalSecond()
     {
 
-        $this->expectException(MissingRouteParameterException::class);
-
         $url = $this->generateUrl('/test');
         $caller = new Caller('Test', 'routeTest', [
             'canonical' => '/test/:mandatory(/:optional)'
@@ -215,9 +217,54 @@ class RequestTest extends TestCase
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
 
+        // Should be empty because canonical URL doesn't match
+        $this->assertEquals(empty($request->toArray()), true);
+
     }
 
-    public function testRouteParamsMandatoryFirstOptionalSecondAndEmbeddedThird()
+    public function testRouteParamsMandatoryFirstOptionalSecondAndEmbeddedThirdWithOneParam()
+    {
+
+        $url = $this->generateUrl('/test/mandatory');
+        $caller = new Caller('Test', 'routeTest', [
+            'canonical' => '/test/:mandatory(/:optional1(/:optional2))'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->mandatory), true);
+        $this->assertEquals($request->mandatory, 'mandatory');
+        $this->assertEquals(isset($request->optional1), false);
+        $this->assertEquals($request->optional1, null);
+        $this->assertEquals(isset($request->optional2), false);
+        $this->assertEquals($request->optional2, null);
+
+    }
+
+    public function testRouteParamsMandatoryFirstOptionalSecondAndEmbeddedThirdWithTwoParams()
+    {
+
+        $url = $this->generateUrl('/test/mandatory/optional1');
+        $caller = new Caller('Test', 'routeTest', [
+            'canonical' => '/test/:mandatory(/:optional1(/:optional2))'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->mandatory), true);
+        $this->assertEquals($request->mandatory, 'mandatory');
+        $this->assertEquals(isset($request->optional1), true);
+        $this->assertEquals($request->optional1, 'optional1');
+        $this->assertEquals(isset($request->optional2), false);
+        $this->assertEquals($request->optional2, null);
+
+    }
+
+    public function testRouteParamsMandatoryFirstOptionalSecondAndEmbeddedThirdWithAllParams()
     {
 
         $url = $this->generateUrl('/test/mandatory/optional1/optional2');
@@ -238,7 +285,49 @@ class RequestTest extends TestCase
 
     }
 
-    public function testRouteParamsMandatoryFirstOptionalSecondAndIsolatedThird()
+    public function testRouteParamsMandatoryFirstOptionalSecondAndIsolatedThirdWithOneParam()
+    {
+
+        $url = $this->generateUrl('/test/mandatory');
+        $caller = new Caller('Test', 'routeTest', [
+            'canonical' => '/test/:mandatory(/:optional1)(/:optional2)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->mandatory), true);
+        $this->assertEquals($request->mandatory, 'mandatory');
+        $this->assertEquals(isset($request->optional1), false);
+        $this->assertEquals($request->optional1, null);
+        $this->assertEquals(isset($request->optional2), false);
+        $this->assertEquals($request->optional2, null);
+
+    }
+
+    public function testRouteParamsMandatoryFirstOptionalSecondAndIsolatedThirdWithTwoParams()
+    {
+
+        $url = $this->generateUrl('/test/mandatory/optional1');
+        $caller = new Caller('Test', 'routeTest', [
+            'canonical' => '/test/:mandatory(/:optional1)(/:optional2)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->mandatory), true);
+        $this->assertEquals($request->mandatory, 'mandatory');
+        $this->assertEquals(isset($request->optional1), true);
+        $this->assertEquals($request->optional1, 'optional1');
+        $this->assertEquals(isset($request->optional2), false);
+        $this->assertEquals($request->optional2, null);
+
+    }
+
+    public function testRouteParamsMandatoryFirstOptionalSecondAndIsolatedThirdWithAllParams()
     {
 
         $url = $this->generateUrl('/test/mandatory/optional1/optional2');
@@ -256,6 +345,80 @@ class RequestTest extends TestCase
         $this->assertEquals($request->optional1, 'optional1');
         $this->assertEquals(isset($request->optional2), true);
         $this->assertEquals($request->optional2, 'optional2');
+
+    }
+
+    public function testRouteParamsWithPathPlaceholder()
+    {
+
+        $url = $this->generateUrl('/list/1/items/2');
+        $caller = new Caller('Test', 'routeList', [
+            'canonical' => '/list(/:id)/items(/:page)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->id), true);
+        $this->assertEquals($request->id, '1');
+        $this->assertEquals(isset($request->page), true);
+        $this->assertEquals($request->page, '2');
+
+    }
+
+    public function testRouteParamsWithPathPlaceholderFirstVar()
+    {
+
+        $url = $this->generateUrl('/list/1/items');
+        $caller = new Caller('Test', 'routeList', [
+            'canonical' => '/list(/:id)/items(/:page)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->id), true);
+        $this->assertEquals($request->id, '1');
+        $this->assertEquals(isset($request->page), false);
+        $this->assertEquals($request->page, null);
+
+    }
+
+    public function testRouteParamsWithPathPlaceholderSecondVar()
+    {
+
+        $url = $this->generateUrl('/list/items/2');
+        $caller = new Caller('Test', 'routeList', [
+            'canonical' => '/list(/:id)/items(/:page)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        $this->assertEquals(isset($request->id), false);
+        $this->assertEquals($request->id, null);
+        $this->assertEquals(isset($request->page), true);
+        $this->assertEquals($request->page, '2');
+
+    }
+
+    public function testRouteParamsWithPathPlaceholderNotFound()
+    {
+
+        $url = $this->generateUrl('/list/1');
+        $caller = new Caller('Test', 'routeList', [
+            'canonical' => '/list(/:id)/items(/:page)'
+        ]);
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project, $url, $caller);
+        $request = new \Yurly\Inject\Request\RouteParams($ctx);
+
+        // Should be empty because canonical URL doesn't match
+        $this->assertEquals(empty($request->toArray()), true);
 
     }
 

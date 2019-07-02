@@ -18,7 +18,7 @@ class Request extends RequestFoundation implements RequestInterface
     protected $args;
     protected $routeParams;
 
-    /*
+    /**
      * Returns a GET request object
      */
     public function get(): Get
@@ -32,7 +32,7 @@ class Request extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Returns a POST request object
      */
     public function post(): Post
@@ -46,7 +46,7 @@ class Request extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Returns a PUT request object
      */
     public function put(): Put
@@ -60,7 +60,7 @@ class Request extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Returns route parameters
      */
     public function routeParams(): RouteParams
@@ -134,7 +134,7 @@ class Request extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * To meet contract requirements
      */
     public function toArray(): array

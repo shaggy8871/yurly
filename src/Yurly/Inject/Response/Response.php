@@ -9,7 +9,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     private $responseClass;
 
-    /*
+    /**
      * Use our own constructor, do not call the parent constructor so the
      * view directory is not set initially
      */
@@ -20,7 +20,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Set the response class
      */
     public function setResponseClass(ResponseInterface $responseClass): ResponseInterface
@@ -32,7 +32,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function setView(array $view): ResponseInterface
@@ -48,7 +48,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function setViewDir(string $dir): ResponseInterface
@@ -64,7 +64,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function setViewParams($params = null): ResponseInterface
@@ -80,7 +80,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function setStatusCode(int $statusCode): ResponseInterface
@@ -96,7 +96,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function setContentType(string $contentType): ResponseInterface
@@ -112,7 +112,7 @@ class Response extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Overridden response class method
      */
     public function render($params = null): void

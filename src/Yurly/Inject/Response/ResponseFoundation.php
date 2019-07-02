@@ -28,7 +28,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set defaults for the response class post instantiation
      */
     public function setDefaults(array $defaults): void
@@ -47,9 +47,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Change the view filename and base directory
-    */
+    /**
+     * Change the view filename and base directory
+     */
     public function setView(array $view): ResponseInterface
     {
 
@@ -64,9 +64,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Change the view base directory
-    */
+    /**
+     * Change the view base directory
+     */
     public function setViewDir(string $dir): ResponseInterface
     {
 
@@ -76,7 +76,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Change the view filename and path
      */
     public function setViewFilename(string $filename): ResponseInterface
@@ -88,7 +88,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set the view parameters prior to rendering
      */
     public function setViewParams($params = null): ResponseInterface
@@ -100,7 +100,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set the response status code
      */
     public function setStatusCode(int $statusCode): ResponseInterface
@@ -112,9 +112,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Set the content type to something other than the default
-    */
+    /**
+     * Set the content type to something other than the default
+     */
     public function setContentType(string $contentType): ResponseInterface
     {
 
@@ -124,7 +124,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Sends a Flash message that disappears on the next page view
      */
     public function flash(string $key, $message): void
@@ -152,7 +152,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Redirect to the specified URL
      */
     public function redirect(string $url, int $statusCode = 302): void
@@ -163,7 +163,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Looks up the canonical URL for a method if it's available via DocBlock
      * The $method parameter should be of type callable, which is a string of format
      * class::methodName or an array of [class, methodName]
@@ -224,7 +224,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Handy method that combines redirect and urlFor
      */
     public function redirectToUrl($callback, ?array $params = null): void
@@ -234,7 +234,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Returns the saved context
      */
     public function getContext(): Context
@@ -244,7 +244,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Return all public and protected values
      */
     public function __get(string $property)
@@ -261,7 +261,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * If the response class itself is output, call the render method automatically
      */
     public function __toString()

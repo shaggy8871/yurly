@@ -9,7 +9,7 @@ class Post extends RequestFoundation implements RequestInterface
 
     protected $post = [];
 
-    /*
+    /**
      * POST values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
@@ -22,7 +22,7 @@ class Post extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Return all properties as an array
      */
     public function toArray(): array
@@ -32,7 +32,7 @@ class Post extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Magic getter method maps requests to the protected $post property
      */
     public function __get(string $property)
@@ -42,7 +42,7 @@ class Post extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Magic isset method maps requests to the protected $post property
      */
     public function __isset(string $property): bool

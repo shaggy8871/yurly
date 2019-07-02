@@ -9,8 +9,9 @@ class RouteParams extends RequestFoundation implements RequestInterface
 {
 
     protected $routeParams = [];
+    protected $lastError;
 
-    /*
+    /**
      * Route param values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
@@ -21,12 +22,16 @@ class RouteParams extends RequestFoundation implements RequestInterface
         $this->type = 'RouteParams';
 
         if (isset($context->getCaller()->annotations['canonical'])) {
-            $this->routeParams = Canonical::extract($context->getCaller()->annotations['canonical'], $context->getUrl()->requestUri);
+            $this->routeParams = Canonical::extract($context->getCaller(), $context->getUrl());
+        }
+
+        if (Canonical::getLastError()) {
+            $this->lastError = Canonical::getLastError();
         }
 
     }
 
-    /*
+    /**
      * Set the local route parameter variable
      */
     public function setRouteParams(array $routeParams): void
@@ -36,7 +41,7 @@ class RouteParams extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Return all properties as an array
      */
     public function toArray(): array
@@ -46,7 +51,17 @@ class RouteParams extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
+     * Return the last parsing error if available, or null
+     */
+    public function getLastError(): ?string
+    {
+
+        return $this->lastError;
+
+    }
+
+    /**
      * Magic getter method maps requests to the protected $get property
      */
     public function __get(string $property)
@@ -56,7 +71,7 @@ class RouteParams extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
      * Magic isset method maps requests to the protected $routeParams property
      */
     public function __isset(string $property): bool

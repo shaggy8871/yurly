@@ -25,7 +25,7 @@ class Context
 
     }
 
-    /*
+    /**
      * Return the project
      */
     public function getProject(): Project
@@ -35,7 +35,7 @@ class Context
 
     }
 
-    /*
+    /**
      * Return the parsed url class that we're using
      */
     public function getUrl(): Url
@@ -45,7 +45,7 @@ class Context
 
     }
 
-    /*
+    /**
      * Return the caller information
      */
     public function getCaller(): Caller
@@ -55,7 +55,7 @@ class Context
 
     }
 
-    /*
+    /**
      * Magic getter prevents class values from being overwritten
      */
     public function __get(string $property)

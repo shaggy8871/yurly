@@ -25,7 +25,7 @@ class Caller
 
     }
 
-    /*
+    /**
      * Magic getter prevents class values from being overwritten
      */
     public function __get(string $property)
@@ -39,7 +39,7 @@ class Caller
 
     }
 
-    /*
+    /**
      * Activate getProperty() style method calls
      */
     public function __call(string $name, array $args)
@@ -56,7 +56,7 @@ class Caller
 
     }
 
-    /*
+    /**
      * Returns true if the property exists
      */
     public function __isset(string $property): bool

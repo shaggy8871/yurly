@@ -7,7 +7,7 @@ use Yurly\Core\{Project, Url};
 interface RouteResolverInterface
 {
 
-    /*
+    /**
      * The resolve method must respond with either of the following:
      * 1. A method name or string in the format $controller::$method if within a controller class
      * 2. A callable function or closure
