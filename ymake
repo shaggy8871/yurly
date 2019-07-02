@@ -14,7 +14,7 @@ if (!isset($autoloadClasses) || empty($autoloadClasses)) {
 }
 
 if (! isset($argv[1])) {
-    echo instructions();
+    instructions();
 }
 
 switch ($argv[1]) {

@@ -5,7 +5,7 @@ namespace Yurly\Core\Utils;
 use Yurly\Core\{Caller, Url};
 use Yurly\Core\Exception\URLParseException;
 
-final class Canonical
+class Canonical
 {
 
     protected static $lastError;

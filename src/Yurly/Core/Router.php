@@ -15,16 +15,16 @@ use Yurly\Core\Interfaces\RouteResolverInterface;
 use Yurly\Middleware\MiddlewareState;
 use Yurly\Inject\Request\RequestInterface;
 
-final class Router
+class Router
 {
 
     const ROUTE_NOTFOUND = 'routeNotFound';
     const ROUTE_DEFAULT  = 'routeDefault';
 
-    private $project;
-    private $url;
-    private $caller;
-    private $log = [];
+    protected $project;
+    protected $url;
+    protected $caller;
+    protected $log = [];
 
     public function __construct(Project $project)
     {
@@ -145,7 +145,7 @@ final class Router
     /**
      * When a route cannot be determined, fall back in a controlled sequence
      */
-    private function routeNotFound(): bool
+    protected function routeNotFound(): bool
     {
 
         // @todo: Remove duplicate code above/below
@@ -179,7 +179,7 @@ final class Router
      * @param $method string method name
      * @todo Instantiate parameters only once per global session
      */
-    private function invokeClassMethod($class, string $method): bool
+    protected function invokeClassMethod($class, string $method): bool
     {
 
         if (!is_callable([$class, $method])) {
@@ -207,7 +207,7 @@ final class Router
      * Calls the specified function or closure and injects parameters
      * @param $function the closure
      */
-    private function invokeFunction($function): bool
+    protected function invokeFunction($function): bool
     {
 
         if (!is_callable($function)) {
@@ -234,7 +234,7 @@ final class Router
     /**
      * Calls the method or closure and injects parameters dynamically
      */
-    private function invokeCallable($reflection, $class = null): bool
+    protected function invokeCallable($reflection, $class = null): bool
     {
 
         $this->beforeCall($reflection, $class);
@@ -332,7 +332,7 @@ final class Router
     /**
      * Allows a @before annotation to determine a different route
      */
-    private function beforeCall(&$reflection, &$class = null): void
+    protected function beforeCall(&$reflection, &$class = null): void
     {
 
         $beforeHandlers = [];
@@ -388,7 +388,7 @@ final class Router
     /**
      * Allows an @after annotation to return a different response
      */
-    private function afterCall(&$response, &$class = null): void
+    protected function afterCall(&$response, &$class = null): void
     {
 
         $afterHandlers = [];
@@ -424,7 +424,7 @@ final class Router
     /**
      * Calls each middleware handler method in turn, and updates $state where appropriate
      */
-    private function invokeMiddleware(string $handlerMethod, $class, MiddlewareState $state): void
+    protected function invokeMiddleware(string $handlerMethod, $class, MiddlewareState $state): void
     {
 
         $middlewareClass = null;
@@ -509,7 +509,7 @@ final class Router
     /**
      * Returns true if it's a Request class
      */
-    private function isRequestClass($class, bool $autoload = true): bool
+    protected function isRequestClass($class, bool $autoload = true): bool
     {
 
         return in_array('Yurly\\Inject\\Request\\RequestInterface', class_implements($class, $autoload));
@@ -519,7 +519,7 @@ final class Router
     /**
      * Returns true if it's a Response class
      */
-    private function isResponseClass($class, bool $autoload = true): bool
+    protected function isResponseClass($class, bool $autoload = true): bool
     {
 
         return in_array('Yurly\\Inject\\Response\\ResponseInterface', class_implements($class, $autoload));
@@ -531,7 +531,7 @@ final class Router
      * If the parameter class contains a static createFromRequest method,
      * ask it to instantiate the class for us using the request data supplied.
      */
-    private function instantiateRequestClass(\ReflectionParameter $param, \ReflectionClass $paramClass): ?RequestInterface
+    protected function instantiateRequestClass(\ReflectionParameter $param, \ReflectionClass $paramClass): ?RequestInterface
     {
 
         try {
@@ -574,7 +574,7 @@ final class Router
     /**
      * Copied and modified from http://php.net/manual/en/reflectionparameter.getclass.php#108620
      */
-    private function getParamClassName(\ReflectionParameter $param): ?string
+    protected function getParamClassName(\ReflectionParameter $param): ?string
     {
 
         preg_match('/\[\s\<\w+?>\s([\w\\\\]+)/s', $param->__toString(), $matches);
@@ -585,7 +585,7 @@ final class Router
     /**
      * Inject details into the response class. Not available for closures.
      */
-    private function setResponseDefaults($responseClass, $reflection, $controllerClass = null): void
+    protected function setResponseDefaults($responseClass, $reflection, $controllerClass = null): void
     {
 
         if (!is_callable([$responseClass, 'setViewFilename'])) {
@@ -613,7 +613,7 @@ final class Router
     /**
      * Find a controller that matches the name specified
      */
-    private function findController($controller): ?string
+    protected function findController($controller): ?string
     {
 
         if (!$controller) {
@@ -633,20 +633,16 @@ final class Router
     /**
      * Attempt to find the appropriate method to call
      */
-    private function findMethod($controller, string $method): bool
+    protected function findMethod($controller, string $method): bool
     {
 
         if (method_exists($controller, $method)) {
-            $this->invokeClassMethod(new $controller($this->project), $method);
-            // Return true to indicate that a method is found
-            return true;
+            return $this->invokeClassMethod(new $controller($this->project), $method);
         }
 
         $methodMatch = $this->scanForMethodMatches($controller);
         if ($methodMatch) {
-            $this->invokeClassMethod(new $controller($this->project), $methodMatch);
-            // Return true to indicate that a method is found
-            return true;
+            return $this->invokeClassMethod(new $controller($this->project), $methodMatch);
         }
 
         return false;
@@ -656,7 +652,7 @@ final class Router
     /**
      * Find a matching method using annotation matching
      */
-    private function scanForMethodMatches($controller): ?string
+    protected function scanForMethodMatches($controller): ?string
     {
 
         $controllerClassReflection = new \ReflectionClass($controller);
