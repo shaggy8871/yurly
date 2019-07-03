@@ -7,7 +7,7 @@ use Yurly\Core\Context;
 class Post extends RequestFoundation implements RequestInterface
 {
 
-    protected $post = [];
+    protected $props = [];
 
     /**
      * POST values are simply stored as object properties - unsanitized!
@@ -18,7 +18,16 @@ class Post extends RequestFoundation implements RequestInterface
         parent::__construct($context);
 
         $this->type = 'Post';
-        $this->post = $_POST;
+
+    }
+
+    /**
+     * Hydrate the request class
+     */
+    public function hydrate(): void
+    {
+
+        $this->props = $_POST;
 
     }
 
@@ -28,27 +37,27 @@ class Post extends RequestFoundation implements RequestInterface
     public function toArray(): array
     {
 
-        return $this->post;
+        return $this->props;
 
     }
 
     /**
-     * Magic getter method maps requests to the protected $post property
+     * Magic getter method maps requests to the protected $props property
      */
     public function __get(string $property)
     {
 
-        return (isset($this->post[$property]) ? $this->post[$property] : null);
+        return (isset($this->props[$property]) ? $this->props[$property] : null);
 
     }
 
     /**
-     * Magic isset method maps requests to the protected $post property
+     * Magic isset method maps requests to the protected $props property
      */
     public function __isset(string $property): bool
     {
 
-        return isset($this->post[$property]);
+        return isset($this->props[$property]);
 
     }
 

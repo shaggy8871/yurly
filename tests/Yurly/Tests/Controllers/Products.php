@@ -24,6 +24,16 @@ class Products extends Controller
     }
 
     /**
+     * @canonical /products/urlParamsRequest/:id(/:slug)
+     */
+    public function routeUrlParamsRequest(RouteParams $request, Html $response): void
+    {
+
+        echo json_encode(['id' => $request->id, 'slug' => $request->slug]);
+
+    }
+
+    /**
      * @canonical /products/urlDestination/:var
      */
     public function routeUrlDestination(): void

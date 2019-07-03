@@ -2,9 +2,9 @@
 
 namespace Yurly\Inject\Response;
 
-use Yurly\Core\Context;
+use Yurly\Core\{Context, Router};
 use Yurly\Core\Utils\{Annotations, Canonical};
-use Yurly\Inject\Response\Exception\{ReverseRouteLookupException, ResponseConfigException};
+use Yurly\Inject\Response\Exception\ResponseConfigException;
 
 abstract class ResponseFoundation
 {
@@ -171,56 +171,7 @@ abstract class ResponseFoundation
     public function urlFor($callback, ?array $params = null): string
     {
 
-        try {
-            // Standard array-based callable [$object, $methodName]
-            if (is_array($callback)) {
-                $reflection = new \ReflectionMethod($callback[0], $callback[1]);
-            } else
-            // Static callable - class::methodName
-            if (is_callable($callback)) {
-                $reflection = new \ReflectionMethod($callback);
-            } else
-            // Fallback 1 - try to make it callable by adding a namespace
-            if (strpos($callback, '::') !== false) {
-                $reflection = new \ReflectionMethod($this->context->getProject()->ns . '\\Controllers\\' . $callback);
-            } else
-            // Fallback 2 - if partial string, assume it's a method name in the current controller class
-            if ($this->context->getCaller()->controller) {
-                $reflection = new \ReflectionMethod($this->context->getCaller()->controller, $callback);
-            } else {
-                throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable");
-            }
-        } catch (\ReflectionException $e) {
-            throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable");
-        }
-
-        $doc = $reflection->getDocComment();
-        if ($doc) {
-            $annotations = Annotations::parseDocBlock($doc);
-            if (isset($annotations['canonical'])) {
-                $canonical = $annotations['canonical'];
-            }
-        }
-
-        // If it can't be determined from the DocBlock, try to guess it
-        if (!isset($canonical)) {
-            $className = $reflection->getDeclaringClass()->getShortName();
-            if ($className == 'Index') {
-                $className = '';
-            }
-            $methodName = ltrim($reflection->getName(), 'route');
-            if ($methodName == 'Default') {
-                $methodName = '';
-            }
-            $canonical = str_replace('_', '-',
-                strtolower(($className ? '/' . $className : '') . ($methodName ? '/' . $methodName : '/'))
-            );
-        }
-
-        // Replace in parameters
-        $canonical = $this->context->getUrl()->rootUri . Canonical::replaceIntoTemplate($canonical, $params);
-
-        return $canonical;
+        return (new Router($this->context->getProject()))->urlFor($callback, $params, $this->context->getCaller());
 
     }
 

@@ -5,6 +5,7 @@ namespace Yurly\Inject\Request;
 interface RequestInterface
 {
 
+    public function hydrate(): void;
     public function toArray(): array;
 
 }

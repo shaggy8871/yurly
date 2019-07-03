@@ -19,6 +19,7 @@ class RequestTest extends TestCase
         $url = $this->generateUrl('/');
         $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Get($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->var1), true);
         $this->assertEquals($request->var1, 1);
@@ -39,6 +40,7 @@ class RequestTest extends TestCase
         $url = $this->generateUrl('/');
         $ctx = new Context($project, $url);
         $request = new \Yurly\Inject\Request\Post($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->var1), true);
         $this->assertEquals($request->var1, 1);
@@ -102,6 +104,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->var1), true);
         $this->assertEquals($request->var1, 1);
@@ -125,6 +128,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
     }
 
@@ -141,6 +145,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
     }
 
@@ -155,6 +160,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->withUpper), true);
         $this->assertEquals($request->withUpper, 'one');
@@ -178,6 +184,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->one), true);
         $this->assertEquals($request->one, 'one');
@@ -199,6 +206,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->optional), false);
         $this->assertEquals($request->optional, null);
@@ -216,6 +224,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         // Should be empty because canonical URL doesn't match
         $this->assertEquals(empty($request->toArray()), true);
@@ -233,6 +242,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -254,6 +264,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -275,6 +286,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -296,6 +308,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -317,6 +330,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -338,6 +352,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->mandatory), true);
         $this->assertEquals($request->mandatory, 'mandatory');
@@ -359,6 +374,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->id), true);
         $this->assertEquals($request->id, '1');
@@ -378,6 +394,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->id), true);
         $this->assertEquals($request->id, '1');
@@ -397,6 +414,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         $this->assertEquals(isset($request->id), false);
         $this->assertEquals($request->id, null);
@@ -416,6 +434,7 @@ class RequestTest extends TestCase
         $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
         $ctx = new \Yurly\Core\Context($project, $url, $caller);
         $request = new \Yurly\Inject\Request\RouteParams($ctx);
+        $request->hydrate();
 
         // Should be empty because canonical URL doesn't match
         $this->assertEquals(empty($request->toArray()), true);

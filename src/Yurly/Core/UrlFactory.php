@@ -36,7 +36,7 @@ class UrlFactory
         $rootUri = ($rootBasePath == '' ? '' : (isset($serverParams['SCRIPT_NAME']) ? rtrim($serverParams['SCRIPT_NAME'], '/') : '/'));
 
         $pathParsed = parse_url($scheme . '://' . $host . $requestUri . (isset($serverParams['QUERY_STRING']) ? '?' . $serverParams['QUERY_STRING'] : ''));
-        $pathComponents = explode('/', substr($pathParsed['path'], 1));
+        $pathComponents = explode('/', substr($pathParsed['path'], 1) ?: '');
         $queryString = (isset($pathParsed['query']) ? $pathParsed['query'] : '');
 
         // Send back complete Url object

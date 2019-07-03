@@ -3,6 +3,8 @@
 namespace Yurly\Test;
 
 use Yurly\Core\{Project, Url, Caller, Context, Router};
+use Yurly\Inject\Response\ResponseInterface;
+use Yurly\Inject\Request\RequestInterface;
 use PHPUnit\Framework\TestCase AS PhpUnitTestCase;
 
 class TestCase extends PhpUnitTestCase
@@ -16,14 +18,13 @@ class TestCase extends PhpUnitTestCase
     protected $projectPath;
     protected $projectDebugMode;
     protected $url;
-    protected $controller;
-    protected $method;
     protected $caller;
     protected $context;
-    protected $router;
-    protected $requestClass;
-    protected $responseClass;
+    protected $routerMock;
 
+    /**
+     * Set a project class
+     */
     public function setProject(Project $project): self
     {
 
@@ -33,6 +34,9 @@ class TestCase extends PhpUnitTestCase
 
     }
 
+    /**
+     * Set a project flag
+     */
     public function setProjectHost(string $projectHost): self
     {
 
@@ -42,6 +46,9 @@ class TestCase extends PhpUnitTestCase
 
     }
 
+    /**
+     * Set a project flag
+     */
     public function setProjectNamespace(string $projectNamespace): self
     {
 
@@ -51,6 +58,9 @@ class TestCase extends PhpUnitTestCase
 
     }
 
+    /**
+     * Set a project flag
+     */
     public function setProjectPath(string $projectPath): self
     {
 
@@ -60,6 +70,9 @@ class TestCase extends PhpUnitTestCase
 
     }
 
+    /**
+     * Set a project flag
+     */
     public function setProjectDebugMode(bool $projectDebugMode): self
     {
 
@@ -69,157 +82,9 @@ class TestCase extends PhpUnitTestCase
 
     }
 
-    public function setUrl(string $url): self
-    {
-
-        $parsedUrl = parse_url($url);
-
-        $this->url = new Url([
-            'host' => $parsedUrl['host'] ?? static::DEFAULT_HOST,
-            'pathComponents' => explode('/', substr($parsedUrl['path'], 1)),
-            'requestUri' => $parsedUrl['path'],
-        ]);
-
-        return $this;
-
-    }
-
-    public function setController(string $controller): self
-    {
-
-        $this->controller = $controller;
-
-    }
-
-    public function setControllerMethod(string $controllerMethod): self
-    {
-
-        list($this->controller, $this->method) = explode('::', $controllerMethod);
-
-    }
-
-    public function setCaller(Caller $caller): self
-    {
-
-        $this->caller = $caller;
-
-        return $this;
-
-    }
-
-    public function setContext(Context $context): self
-    {
-
-        $this->context = $context;
-
-        return $this;
-
-    }
-
-    public function withRequestClass(string $requestClass): self
-    {
-
-        $this->requestClass = $requestClass;
-
-        return $this;
-
-    }
-
-    public function withResponseClass(string $responseClass): self
-    {
-
-        $this->responseClass = $responseClass;
-
-        return $this;
-
-    }
-
-    public function skipBefore() {}
-
-    public function skipAfter() {}
-
-    public function skipMiddleware() {}
-
-    public function skipInvoke(): self
-    {
-
-        $this->router = $this->getMockBuilder(Router::class)
-            ->setConstructorArgs([$this->getProject()])
-            ->setMethods(['invokeCallable'])
-            ->getMock();
-        $this->router
-            ->expects($this->once())
-            ->method('invokeCallable')
-            ->will($this->returnCallback(function($reflection, $class) { return true; }));
-
-        return $this;
-
-    }
-
-    public function getCaller(): Caller
-    {
-
-        $this->skipInvoke();
-
-        $this->router->parseUrl($this->getUrl());
-
-        return $this->router->getCaller();
-
-    }
-
     /**
-     * Parses the URL but doesn't actually call the target route method, but instead returns the reflection
+     * Get or set the project with defaults
      */
-    public function getRoute(): string
-    {
-
-        $caller = $this->getCaller();
-
-        return get_class($caller->getController()) . '::' . $caller->getMethod();
-
-    }
-
-    public function route()
-    {
-
-        $this->getProject();
-        $this->getUrl();
-
-        if (!$this->controller && !$this->method) {
-            /**
-             * 1. Create mock
-             * 2. Enable all methods except invokeCallable()
-             * 3. Trap parameters $reflection and $class
-             * 4. Determine controller and method
-             */
-        }
-        if (!$this->controller) {
-            $this->controller = 'Index';
-        }
-        if (!$this->method) {
-            $this->method = 'routeDefault';
-        }
-        if (!$this->caller) {
-            $this->caller = new Caller();
-        }
-        if (!$this->context) {
-            $this->context = new Context($this->project, $this->url, $this->caller);
-        }
-
-    }
-
-    protected function getComposerDefaults()
-    {
-
-        $composer = json_decode(file_get_contents('composer.json'), true);
-        if (isset($composer['autoload']['psr-4'])) {
-            $autoloadClasses = $composer['autoload']['psr-4'];
-        }
-
-        return is_array($autoloadClasses) && count($autoloadClasses) > 0 ? array_splice($autoloadClasses, 0, 1) : [];
-
-    }
-
     protected function getProject(): Project
     {
 
@@ -242,6 +107,27 @@ class TestCase extends PhpUnitTestCase
 
     }
 
+    /**
+     * Set the URL
+     */
+    public function setUrl(string $url): self
+    {
+
+        $parsedUrl = parse_url($url);
+
+        $this->url = new Url([
+            'host' => $parsedUrl['host'] ?? static::DEFAULT_HOST,
+            'pathComponents' => explode('/', substr($parsedUrl['path'], 1) ?: ''),
+            'requestUri' => $parsedUrl['path'],
+        ]);
+
+        return $this;
+
+    }
+
+    /**
+     * Get or set the URL
+     */
     protected function getUrl(): Url
     {
 
@@ -250,6 +136,220 @@ class TestCase extends PhpUnitTestCase
         }
 
         return $this->url;
+
+    }
+
+    /**
+     * Set the caller
+     */
+    public function setCaller(): self
+    {
+
+        $routerMock = $this->getRouterMock(['invokeCallable']);
+        $routerMock->parseUrl($this->getUrl());
+
+        $this->caller = $routerMock->getCaller();
+
+        return $this;
+
+    }
+
+    /**
+     * Get or set the caller
+     */
+    public function getCaller(): Caller
+    {
+
+        if (!$this->caller) {
+            $this->setCaller();
+        }
+
+        return $this->caller;
+
+    }
+
+    /**
+     * Set the context
+     */
+    public function setContext(?Project $project = null, ?Url $url = null, ?Caller $caller = null): self
+    {
+
+        $this->context = new Context($project, $url, $caller);
+
+        return $this;
+
+    }
+
+    /**
+     * Get or set the context
+     */
+    public function getContext(): Context
+    {
+
+        if (!$this->context) {
+            $this->setContext($this->getProject(), $this->getUrl(), $this->getCaller());
+        }
+
+        return $this->context;
+
+    }
+
+    /**
+     * Parses the URL but doesn't actually call the target route method; instead it returns the controller and method name
+     */
+    public function getRoute(): string
+    {
+
+        $caller = $this->getCaller();
+
+        return ($caller->getController() ? get_class($caller->getController()) . '::' : '') . $caller->getMethod();
+
+    }
+
+    /**
+     * Calls the route via URL and outputs the result as per normal
+     * 
+     * @var $url        A full or relative URL
+     */
+    public function callRoute(string $url)
+    {
+
+        $routerMock = $this
+            ->setUrl($url)
+            ->getRouterMock();
+
+        $routerMock->parseUrl($this->url);
+
+    }
+
+    /**
+     * Calls the route by callback lookup
+     * 
+     * @var $callback   Expects a callback, callable, controllerMethod (Index::routeDefault) or method name
+     * @var $params     Optional URL parameters to replace
+     * @var $caller     Optional context if URL is relative to current caller
+     */
+    public function callRouteFor($callback, ?array $params = [], ?Caller $caller = null)
+    {
+
+        $urlFor = $this->getRouterMock()->urlFor($callback, $params, $caller);
+
+        return $this->callRoute($urlFor);
+
+    }
+
+    /**
+     * Create a Request class mock and enable the $callback to take its place
+     * 
+     * @var $class      The request class
+     * @var $callback   A closure to replace the mocked functionality, accepts ($self) as parameter
+     */
+    public function getRequestMock(string $class, callable $callback): RequestInterface
+    {
+
+        $requestMock = $this->getMockBuilder($class)
+            ->setConstructorArgs([$this->getContext()])
+            ->setMethods(['hydrate'])
+            ->getMock();
+
+        $requestMock
+            ->expects($this->once())
+            ->method('hydrate')
+            ->will($this->returnCallback(function() use ($callback, $requestMock) { $callback($requestMock); }));
+
+        return $requestMock;
+
+    }
+
+    /**
+     * Create a Response class mock and enable the $callback to take its place
+     * 
+     * @var $class      The response class
+     * @var $callback   A closure to replace the mocked functionality, accepts ($params) as parameter
+     */
+    public function getResponseMock(string $class, callable $callback): ResponseInterface
+    {
+
+        $responseMock = $this->getMockBuilder($class)
+            ->setConstructorArgs([$this->getContext()])
+            ->setMethods(['render'])
+            ->getMock();
+
+        $responseMock
+            ->expects($this->once())
+            ->method('render')
+            ->will($this->returnCallback(function($params) use ($callback) { $callback($params); }));
+
+        return $responseMock;
+
+    }
+
+    /**
+     * Calls the specified route with the supplied mock parameters
+     */
+    public function callRouteWithMocks(string $url, array $mockParams)
+    {
+
+        $this->setUrl($url);
+
+        $routerMock = $this
+            ->getRouterMock();
+    
+        $routerMock
+            ->setMockParameters($mockParams)
+            ->parseUrl($this->getUrl($url));
+ 
+    }
+
+    /**
+     * Get a mocked Router class with one or more methods replaced
+     */
+    protected function getRouterMock(?array $mockMethods = null)
+    {
+
+        $this->routerMock = $this->getMockBuilder(Router::class)
+            ->setConstructorArgs([$this->getProject()])
+            ->setMethods($mockMethods)
+            ->getMock();
+
+        if (!$mockMethods) {
+            return $this->routerMock;
+        }
+
+        foreach($mockMethods as $method) {
+            switch($method) {
+                case 'invokeCallable':
+                    $this->routerMock
+                        ->expects($this->once())
+                        ->method($method)
+                        ->will($this->returnCallback(function($reflection, $class) { return true; }));
+                    break;
+                case 'beforeCall':
+                case 'afterCall':
+                    $this->routerMock
+                        ->expects($this->once())
+                        ->method($method)
+                        ->will($this->returnCallback(function($reflection, $class) { }));
+                    break;
+            }
+        }
+
+        return $this->routerMock;
+
+    }
+
+    /**
+     * Get default namespace and path settings for projects
+     */
+    protected function getComposerDefaults()
+    {
+
+        $composer = json_decode(file_get_contents('composer.json'), true);
+        if (isset($composer['autoload']['psr-4'])) {
+            $autoloadClasses = $composer['autoload']['psr-4'];
+        }
+
+        return is_array($autoloadClasses) && count($autoloadClasses) > 0 ? array_splice($autoloadClasses, 0, 1) : [];
 
     }
 

@@ -3,6 +3,8 @@
 namespace Yurly\Tests;
 
 use Yurly\Test\TestCase;
+use Yurly\Inject\Request\RouteParams;
+use Yurly\Inject\Response\Json;
 
 class TestCaseTest extends TestCase
 {
@@ -11,7 +13,7 @@ class TestCaseTest extends TestCase
     {
 
         $route = $this
-            ->getProjectDefaults()
+            ->setProjectDefaults()
             ->setUrl('/')
             ->getRoute();
 
@@ -23,7 +25,7 @@ class TestCaseTest extends TestCase
     {
 
         $caller = $this
-            ->getProjectDefaults()
+            ->setProjectDefaults()
             ->setUrl('/twigresponse')
             ->getCaller();
 
@@ -33,7 +35,58 @@ class TestCaseTest extends TestCase
 
     }
 
-    private function getProjectDefaults(): self
+    public function testCallRoute()
+    {
+
+        $this->expectOutputString('RouteDefault');
+
+        $this
+            ->setProjectDefaults()
+            ->callRoute('/');
+
+    }
+
+    public function testCallRouteWithRequestMock()
+    {
+
+        $this
+            ->setProjectDefaults();
+
+        $requestProps = ['id' => '456', 'slug' => 'hydrated'];
+
+        $mockRequest = $this
+            ->getRequestMock(RouteParams::class, function($self) use ($requestProps) { $self->setProps($requestProps); });
+
+        $this->expectOutputString(json_encode(['id' => '456', 'slug' => 'hydrated']));
+
+        $this
+            ->callRouteWithMocks('/urlParamsRequest/123/test', [
+                RouteParams::class => $mockRequest
+            ]);
+
+    }
+
+    public function testCallRouteWithResponseMock()
+    {
+
+        $this
+            ->setProjectDefaults();
+
+        $responseResult = [];
+
+        $mockResponse = $this
+            ->getResponseMock(Json::class, function($params) use (&$responseResult) { $responseResult = $params; });
+
+        $this
+            ->callRouteWithMocks('/jsonresponse', [
+                Json::class => $mockResponse
+            ]);
+
+        $this->assertEquals($responseResult, ['json' => true]);
+
+    }
+
+    private function setProjectDefaults(): self
     {
 
         return $this

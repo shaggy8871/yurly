@@ -9,13 +9,13 @@ class Request extends RequestFoundation implements RequestInterface
     const TYPE_POST = 'Post';
     const TYPE_PUT = 'Put';
     const TYPE_DELETE = 'Delete';
-    const TYPE_OPTIONS = 'Options';
     const TYPE_PATCH = 'Patch';
 
     protected $get;
     protected $post;
     protected $put;
-    protected $args;
+    protected $delete;
+    protected $patch;
     protected $routeParams;
 
     /**
@@ -57,6 +57,34 @@ class Request extends RequestFoundation implements RequestInterface
         }
 
         return $this->put;
+
+    }
+
+    /**
+     * Returns a DELETE request object
+     */
+    public function delete(): Delete
+    {
+
+        if (!$this->delete) {
+            $this->delete = new Delete($this->context);
+        }
+
+        return $this->delete;
+
+    }
+
+    /**
+     * Returns a PATCH request object
+     */
+    public function patch(): Patch
+    {
+
+        if (!$this->patch) {
+            $this->patch = new Patch($this->context);
+        }
+
+        return $this->patch;
 
     }
 
@@ -115,22 +143,20 @@ class Request extends RequestFoundation implements RequestInterface
     }
 
     /**
-     * @return boolean if this request is a OPTIONS
-     */
-    public function isOptions(): bool
-    {
-
-        return $this->type == self::TYPE_OPTIONS;
-
-    }
-
-    /**
      * @return boolean if this request is a PATCH
      */
     public function isPatch(): bool
     {
 
         return $this->type == self::TYPE_PATCH;
+
+    }
+
+    /**
+     * To meet contract requirements
+     */
+    public function hydrate(): void
+    {
 
     }
 

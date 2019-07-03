@@ -66,6 +66,18 @@ class Index extends Controller
 
     }
 
+    /**
+     * @canonical /urlforwithparams/:id(/:slug)
+     */
+    public function routeUrlForWithParams(Get $request, Html $response): void
+    {
+
+        echo $response->urlFor([$this, 'routeUrlParamsRequest'], [
+            'var' => 'val'
+        ]);
+
+    }
+
     /*
      * Swapped the order to test injection
      */
@@ -76,40 +88,13 @@ class Index extends Controller
 
     }
 
-    public function routeUrlForAutodetect1(Get $request, Html $response): void
-    {
-
-        // Route to the local method
-        echo $response->urlFor('routeUrlDestinationAutodetect');
-
-    }
-
-    public function routeUrlForAutodetect2(Get $request, Html $response): void
-    {
-
-        // Route to the method within Products controller
-        echo $response->urlFor('Products::routeUrlDestinationAutodetect');
-
-    }
-
-    /**
-     * @canonical /differentName
-     */
-    public function routeUrlForAutodetect3(Get $request, Html $response): void
-    {
-
-        // Route to the local method
-        echo 'routeUrlDestinationCanonical';
-
-    }
-
     public function routeUrlForFallback1(Get $request, Html $response): void
     {
 
-        // Method name only, should assume current class
-        echo $response->urlFor('routeUrlParamsRequest', [
+        // Partial class name, should automatically namespace to current project
+        echo $response->urlFor('Products::routeUrlParamsRequest', [
             'id' => '123',
-            'slug' => 'slugger'
+            'slug' => 'test'
         ]);
 
     }
@@ -117,9 +102,10 @@ class Index extends Controller
     public function routeUrlForFallback2(Get $request, Html $response): void
     {
 
-        // Partial class name, should automatically namespace to current project
-        echo $response->urlFor('Products::routeUrlDestination', [
-            'var' => 'val'
+        // Method name only, should use caller to determine URL path
+        echo $response->urlFor('routeUrlParamsRequest', [
+            'id' => '123',
+            'slug' => 'test'
         ]);
 
     }

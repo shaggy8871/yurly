@@ -2,11 +2,8 @@
 
 namespace Yurly\Tests;
 
-use PHPUnit\Framework\TestCase;
-use Yurly\Core\Project;
-use Yurly\Core\Url;
-use Yurly\Core\UrlFactory;
-use Yurly\Core\Router;
+use Yurly\Test\TestCase;
+use Yurly\Core\{Caller, Project, Url, UrlFactory, Router};
 use Yurly\Core\Exception\{
     ClassNotFoundException,
     RouteNotFoundException
@@ -204,75 +201,106 @@ class RouterTest extends TestCase
 
     }
 
-    public function testUrlFor()
+    /******************************************************************
+     * 
+     * Testing: urlFor
+     * 
+     ******************************************************************/
+
+    public function testUrlForArrayAsCallback()
     {
 
-        $this->expectOutputString('/urlDestination/val');
+        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeDefault']);
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlFor'));
+        $this->assertEquals($urlFor, '/');
 
     }
 
-    public function testUrlForHome()
+    public function testUrlForArrayAsCallbackWithParams()
     {
 
-        $this->expectOutputString('/');
+        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123', 'slug' => 'test']);
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForHome'));
+        $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
+
+        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123']);
+
+        $this->assertEquals($urlFor, '/urlParamsRequest/123');
 
     }
 
-    public function testUrlForAutodetect1()
+    public function testUrlForIsCallback()
     {
 
-        $this->expectOutputString('/urldestinationautodetect');
+        $urlFor = $this->router->urlFor('Index::routeDefault');
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlforautodetect1'));
+        $this->assertEquals($urlFor, '/');
 
     }
 
-    public function testUrlForAutodetect2()
+    public function testUrlForIsCallbackWithParams()
     {
 
-        $this->expectOutputString('/products/urldestinationautodetect');
+        $urlFor = $this->router->urlFor('Yurly\\Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123', 'slug' => 'test']);
+        $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlforautodetect2'));
+        $urlFor = $this->router->urlFor('Yurly\\Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123']);
+        $this->assertEquals($urlFor, '/urlParamsRequest/123');
 
     }
 
-    public function testUrlForAutodetect3()
-    {
-
-        $this->expectOutputString('routeUrlDestinationCanonical');
-
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/differentName'));
-
-    }
-
-    public function testUrlForAutodetect4()
-    {
-
-        $this->expectOutputString('ProductsRouteUrlDestinationCanonical99');
-
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/canonical/99'));
-
-    }
-
+    /**
+     * Fallback 1 is where we supply a Controller::method string and it gets matched using the project namespace
+     */
     public function testUrlForFallback1()
     {
 
-        $this->expectOutputString('/urlParamsRequest/123/slugger');
+        $this->setProjectDefaults();
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForFallback1'));
+        // 1. Test router urlFor first
+        $urlFor = $this->router->urlFor('Products::routeUrlParamsRequest', ['id' => '123', 'slug' => 'test']);
+        $this->assertEquals($urlFor, '/products/urlParamsRequest/123/test');
+
+        // 2. Test inside controller via URL
+        $this->expectOutputString('/products/urlParamsRequest/123/test');
+        $this->callRoute('/urlforfallback1');
 
     }
 
+    /**
+     * Fallback 2 is where we have a Caller and it matches a method name only by using the existing controller
+     */
     public function testUrlForFallback2()
     {
 
-        $this->expectOutputString('/products/urlDestination/val');
+        $this->setProjectDefaults();
 
-        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlForFallback2'));
+        // 1. Test router urlFor first; set caller for context
+        $urlFor = $this->router->urlFor('routeUrlParamsRequest', ['id' => '123', 'slug' => 'test'], new Caller('Yurly\\Tests\\Controllers\\Index', 'routeUrlForFallback2'));
+        $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
+
+        // 2. Test inside controller via URL
+        $this->expectOutputString('/urlParamsRequest/123/test');
+        $this->callRoute('/urlforfallback2');
+
+    }
+
+    /**
+     * Test getting the home page URL from the routeUrlForHome route using urlFor() in Router and ResponseFoundation
+     */
+    public function testUrlForFromInsideController()
+    {
+
+        $this->setProjectDefaults();
+
+        // 1. Test router urlFor first; set caller for context
+        $urlFor = $this->router->urlFor('routeDefault', [], new Caller('Yurly\\Tests\\Controllers\\Index', 'routeUrlForHome'));
+        $this->assertEquals($urlFor, '/');
+
+        $this->expectOutputString('/');
+
+        // 2. Test inside controller via URL
+        $this->callRoute('/urlforhome');
 
     }
 
@@ -425,6 +453,15 @@ class RouterTest extends TestCase
             'pathComponents' => explode('/', substr($parsedUrl['path'], 1)),
             'requestUri' => $parsedUrl['path'],
         ]);
+
+    }
+
+    private function setProjectDefaults(): self
+    {
+
+        return $this
+            ->setProjectNamespace('Yurly\\Tests')
+            ->setProjectPath('tests');
 
     }
 

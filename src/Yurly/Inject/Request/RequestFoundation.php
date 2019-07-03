@@ -8,6 +8,7 @@ use Yurly\Core\Exception\UnknownPropertyException;
 abstract class RequestFoundation
 {
 
+    protected $props = [];
     protected $context;
     protected $type;
     protected $flash;
@@ -29,6 +30,16 @@ abstract class RequestFoundation
             $this->flash = json_decode($_SESSION['YURLY.flash']);
             unset($_SESSION['YURLY.flash']);
         }
+
+    }
+
+    /**
+     * Manually set props
+     */
+    public function setProps(array $props): void
+    {
+
+        $this->props = $props;
 
     }
 

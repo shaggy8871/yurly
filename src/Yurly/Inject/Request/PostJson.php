@@ -7,15 +7,10 @@ use Yurly\Core\Context;
 class PostJson extends Post implements RequestInterface
 {
 
-    /**
-     * POST values are simply stored as object properties - unsanitized!
-     */
-    public function __construct(Context $context)
+    public function hydrate(): void
     {
 
-        parent::__construct($context);
-
-        $this->post = json_decode(file_get_contents('php://input'), true);
+        $this->props = json_decode(file_get_contents('php://input'), true) ?? [];
 
     }
 

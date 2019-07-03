@@ -7,11 +7,13 @@
 namespace Yurly\Core;
 
 use Yurly\Core\Exception\{
+    ClassNotFoundException,
     ConfigException,
-    RouteNotFoundException,
-    ClassNotFoundException
+    ReverseRouteLookupException,
+    RouteNotFoundException
 };
 use Yurly\Core\Interfaces\RouteResolverInterface;
+use Yurly\Core\Utils\{Annotations, Canonical};
 use Yurly\Middleware\MiddlewareState;
 use Yurly\Inject\Request\RequestInterface;
 
@@ -24,6 +26,7 @@ class Router
     protected $project;
     protected $url;
     protected $caller;
+    protected $mockParameters = [];
     protected $log = [];
 
     public function __construct(Project $project)
@@ -36,16 +39,10 @@ class Router
     /**
      * Determine the target controller based on the url path
      */
-    public function parseUrl(Url $url = null): bool
+    public function parseUrl(Url $url): bool
     {
 
-        if ($url) {
-            $this->url = $url; // override existing
-        }
-
-        if (!($this->url instanceof Url)) {
-            throw new ConfigException($this->project, 'No Url instance supplied for parser.');
-        }
+        $this->url = $url;
 
         $pathComponents = $this->url->pathComponents;
 
@@ -139,6 +136,83 @@ class Router
 
         // Can't determine route, so start fallback steps
         return $this->routeNotFound();
+
+    }
+
+    /**
+     * Attempt to reverse a route lookup from callback to URL
+     *
+     * @var $callback   Expects a callback, callable, controllerMethod (Index::routeDefault) or method name
+     * @var $params     Optional URL parameters to replace
+     * @var $caller     Optional context if URL is relative to current caller
+     */
+    public function urlFor($callback, ?array $params = [], ?Caller $caller = null): string
+    {
+
+        // Standard array-based callable [$object, $methodName]
+        if (is_array($callback)) {
+            $reflection = new \ReflectionMethod($callback[0], $callback[1]);
+        } else
+        // Static callable - class::methodName
+        if (is_callable($callback)) {
+            $reflection = new \ReflectionMethod($callback);
+        } else
+        // Fallback 1 - try to make it callable by adding a namespace
+        if (strpos($callback, '::') !== false) {
+            $reflection = new \ReflectionMethod(($callback[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $callback);
+        } else
+        // Fallback 2 - if partial string, assume it's a method name in the current controller class
+        if ($caller instanceof Caller) {
+            $reflection = new \ReflectionMethod($caller->controller, $callback);
+        } else {
+            throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable, or route cannot be found.");
+        }
+
+        $doc = $reflection->getDocComment();
+        if ($doc) {
+            $annotations = Annotations::parseDocBlock($doc);
+            if (isset($annotations['canonical'])) {
+                $canonical = $annotations['canonical'];
+            }
+        }
+
+        // If it can't be determined from the DocBlock, try to guess it
+        if (!isset($canonical)) {
+            $className = $reflection->getDeclaringClass()->getShortName();
+            if ($className == 'Index') {
+                $className = '';
+            }
+            $methodName = ltrim($reflection->getName(), 'route');
+            if ($methodName == 'Default') {
+                $methodName = '';
+            }
+            $canonical = str_replace('_', '-',
+                strtolower(($className ? '/' . $className : '') . ($methodName ? '/' . $methodName : '/'))
+            );
+        }
+
+        // Replace in parameters
+        $url = ($this->url instanceof Url ? $this->url->getUrl()->rootUri : '') . Canonical::replaceIntoTemplate($canonical, $params);
+
+        return $url;
+
+    }
+
+    /**
+     * @internal
+     * 
+     * Set mock parameters to replace injected parameters for test purposes
+     */
+    public function setMockParameters(array $params): self
+    {
+
+        $this->mockParameters = [];
+
+        foreach ($params as $k => $param) {
+            $this->mockParameters[$k] = $param;
+        }
+
+        return $this;
 
     }
 
@@ -247,13 +321,19 @@ class Router
         $defaultResponseClass = null;
         // Loop through parameters to determine their class types
         foreach($params as $param) {
+            // If no class name, ignore it rather than fail
+            if (!$this->getParamClassName($param)) {
+                $inject[] = null;
+                continue;    
+            }
+            // Try to get the class type-hint
             try {
                 $paramClass = $param->getClass();
             } catch (\Exception $e) {
                 // Rethrow the error with further information
                 throw new ClassNotFoundException($param->getName(), ($this->caller->controller ? get_class($this->caller->controller) : null), $this->caller->method);
             }
-            // If it's not a class, inject a null value
+            // Fallback - if it's not a class, inject a null value
             if (!($paramClass instanceof \ReflectionClass)) {
                 $inject[] = null;
                 continue;
@@ -270,8 +350,15 @@ class Router
                     $inject[] = new Context($this->project, $this->url, $this->caller);
                     break;
                 default:
+                    if (isset($this->mockParameters[$paramClass->name])) {
+                        $paramInstance = $this->mockParameters[$paramClass->name];
+                        if ($this->isRequestClass($paramClass->name, false)) {
+                            $paramInstance->hydrate();
+                        }
+                    } else
                     if ($this->isRequestClass($paramClass->name, false)) {
                         $paramInstance = $this->instantiateRequestClass($param, $paramClass);
+                        $paramInstance->hydrate();
                     } else {
                         $paramInstance = new $paramClass->name(
                             new Context($this->project, $this->url, $this->caller)

@@ -3,39 +3,31 @@
 namespace Yurly\Inject\Request;
 
 use Yurly\Core\Context;
-use Yurly\Core\Utils\Canonical;
 
-class RouteParams extends RequestFoundation implements RequestInterface
+class Patch extends RequestFoundation implements RequestInterface
 {
 
     protected $props = [];
-    protected $lastError;
 
     /**
-     * Route param values are simply stored as object properties - unsanitized!
+     * PATCH values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
     {
 
         parent::__construct($context);
 
-        $this->type = 'RouteParams';
+        $this->type = 'Patch';
 
     }
 
     /**
-     * Set the local route parameter variable
+     * Hydrate the request class
      */
     public function hydrate(): void
     {
 
-        if (isset($this->context->getCaller()->annotations['canonical'])) {
-            $this->props = Canonical::extract($this->context->getCaller(), $this->context->getUrl());
-        }
-
-        if (Canonical::getLastError()) {
-            $this->lastError = Canonical::getLastError();
-        }
+        parse_str(file_get_contents("php://input"), $this->props);
 
     }
 
@@ -46,16 +38,6 @@ class RouteParams extends RequestFoundation implements RequestInterface
     {
 
         return $this->props;
-
-    }
-
-    /**
-     * Return the last parsing error if available, or null
-     */
-    public function getLastError(): ?string
-    {
-
-        return $this->lastError;
 
     }
 

@@ -7,7 +7,7 @@ use Yurly\Core\Context;
 class Put extends RequestFoundation implements RequestInterface
 {
 
-    protected $put = [];
+    protected $props = [];
 
     /**
      * PUT values are simply stored as object properties - unsanitized!
@@ -19,18 +19,16 @@ class Put extends RequestFoundation implements RequestInterface
 
         $this->type = 'Put';
 
-        parse_str(file_get_contents("php://input"), $this->put);
-
     }
 
     /**
-     * Optional method to set the input manually
+     * Hydrate the request class
      */
-    public function setProps(array $properties): void
+    public function hydrate(): void
     {
 
-        $this->put = $properties;
-        
+        parse_str(file_get_contents("php://input"), $this->props);
+
     }
 
     /**
@@ -39,27 +37,27 @@ class Put extends RequestFoundation implements RequestInterface
     public function toArray(): array
     {
 
-        return $this->put;
+        return $this->props;
 
     }
 
     /**
-     * Magic getter method maps requests to the protected $put property
+     * Magic getter method maps requests to the protected $props property
      */
     public function __get(string $property)
     {
 
-        return (isset($this->put[$property]) ? $this->put[$property] : null);
+        return (isset($this->props[$property]) ? $this->props[$property] : null);
 
     }
 
     /**
-     * Magic isset method maps requests to the protected $put property
+     * Magic isset method maps requests to the protected $props property
      */
     public function __isset(string $property): bool
     {
 
-        return isset($this->put[$property]);
+        return isset($this->props[$property]);
 
     }
 
