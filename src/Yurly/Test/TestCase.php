@@ -84,6 +84,8 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Get or set the project with defaults
+     * 
+     * @dependentMethod     getComposerDefaults()
      */
     protected function getProject(): Project
     {
@@ -127,6 +129,8 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Get or set the URL
+     * 
+     * @dependentMethod     setUrl()
      */
     protected function getUrl(): Url
     {
@@ -140,15 +144,21 @@ class TestCase extends PhpUnitTestCase
     }
 
     /**
-     * Set the caller
+     * Set the caller - if not specified, will try to determine using the URL
+     * 
+     * @dependentMethod     getUrl()
      */
-    public function setCaller(): self
+    public function setCaller(?Caller $caller = null): self
     {
 
-        $routerMock = $this->getRouterMock(['invokeCallable']);
-        $routerMock->parseUrl($this->getUrl());
+        if ($caller instanceof Caller) {
+            $this->caller = $caller;
+        } else {
+            $routerMock = $this->getRouterMock(['invokeCallable']);
+            $routerMock->parseUrl($this->getUrl());
 
-        $this->caller = $routerMock->getCaller();
+            $this->caller = $routerMock->getCaller();
+        }
 
         return $this;
 
@@ -156,6 +166,8 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Get or set the caller
+     * 
+     * @dependentMethod     setCaller()
      */
     public function getCaller(): Caller
     {
@@ -170,11 +182,13 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Set the context
+     * 
+     * @dependentMethod     getProject(), getUrl(), getCaller()
      */
     public function setContext(?Project $project = null, ?Url $url = null, ?Caller $caller = null): self
     {
 
-        $this->context = new Context($project, $url, $caller);
+        $this->context = new Context($project ?? $this->getProject(), $url ?? $this->getUrl(), $caller ?? $this->getCaller());
 
         return $this;
 
@@ -182,12 +196,14 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Get or set the context
+     * 
+     * @dependentMethod     setContext()
      */
     public function getContext(): Context
     {
 
         if (!$this->context) {
-            $this->setContext($this->getProject(), $this->getUrl(), $this->getCaller());
+            $this->setContext();
         }
 
         return $this->context;
@@ -196,6 +212,8 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Parses the URL but doesn't actually call the target route method; instead it returns the controller and method name
+     * 
+     * @dependentMethod     getCaller()
      */
     public function getRoute(): string
     {
@@ -207,42 +225,12 @@ class TestCase extends PhpUnitTestCase
     }
 
     /**
-     * Calls the route via URL and outputs the result as per normal
-     * 
-     * @var $url        A full or relative URL
-     */
-    public function callRoute(string $url)
-    {
-
-        $routerMock = $this
-            ->setUrl($url)
-            ->getRouterMock();
-
-        $routerMock->parseUrl($this->url);
-
-    }
-
-    /**
-     * Calls the route by callback lookup
-     * 
-     * @var $callback   Expects a callback, callable, controllerMethod (Index::routeDefault) or method name
-     * @var $params     Optional URL parameters to replace
-     * @var $caller     Optional context if URL is relative to current caller
-     */
-    public function callRouteFor($callback, ?array $params = [], ?Caller $caller = null)
-    {
-
-        $urlFor = $this->getRouterMock()->urlFor($callback, $params, $caller);
-
-        return $this->callRoute($urlFor);
-
-    }
-
-    /**
      * Create a Request class mock and enable the $callback to take its place
      * 
-     * @var $class      The request class
-     * @var $callback   A closure to replace the mocked functionality, accepts ($self) as parameter
+     * @var $class          The request class
+     * @var $callback       A closure to replace the mocked functionality, accepts ($self) as parameter
+     * 
+     * @dependentMethod     getContext()
      */
     public function getRequestMock(string $class, callable $callback): RequestInterface
     {
@@ -264,8 +252,10 @@ class TestCase extends PhpUnitTestCase
     /**
      * Create a Response class mock and enable the $callback to take its place
      * 
-     * @var $class      The response class
-     * @var $callback   A closure to replace the mocked functionality, accepts ($params) as parameter
+     * @var $class          The response class
+     * @var $callback       A closure to replace the mocked functionality, accepts ($params) as parameter
+     * 
+     * @dependentMethod     getContext()
      */
     public function getResponseMock(string $class, callable $callback): ResponseInterface
     {
@@ -286,23 +276,65 @@ class TestCase extends PhpUnitTestCase
 
     /**
      * Calls the specified route with the supplied mock parameters
+     * 
+     * @var $url            A full or relative URL
+     * @var $mockParams     An array of request/response classes to mock
+     * 
+     * @dependentMethod     setUrl(), getUrl(), getRouterMock()
      */
-    public function callRouteWithMocks(string $url, array $mockParams)
+    public function callRouteWithMocks(string $url, array $mockParams = []): void
     {
 
         $this->setUrl($url);
 
-        $routerMock = $this
-            ->getRouterMock();
-    
-        $routerMock
-            ->setMockParameters($mockParams)
-            ->parseUrl($this->getUrl($url));
+        $routerMock = $this->getRouterMock();
+
+        if (!empty($mockParams)) {
+            $routerMock->setMockParameters($mockParams);
+        }
+
+        $routerMock->parseUrl($this->getUrl($url));
  
     }
 
     /**
+     * Calls the route via URL and outputs the result as per normal
+     * 
+     * @var $url            A full or relative URL
+     * 
+     * @dependentMethod     callRouteWithMocks()
+     */
+    public function callRoute(string $url): void
+    {
+
+        $this->callRouteWithMocks($url);
+
+    }
+
+    /**
+     * Calls the route using the urlFor lookup method
+     * 
+     * @var $callback       Expects a callback, callable, controllerMethod (Index::routeDefault) or method name
+     * @var $params         Optional URL parameters to replace
+     * @var $caller         Optional context if URL is relative to current caller
+     * 
+     * @dependentMethod     getRouterMock(), callRoute()
+     */
+    public function callRouteFor($callback, ?array $params = [], ?Caller $caller = null)
+    {
+
+        $urlFor = $this->getRouterMock()->urlFor($callback, $params, $caller);
+
+        return $this->callRoute($urlFor);
+
+    }
+
+    /**
      * Get a mocked Router class with one or more methods replaced
+     * 
+     * @var $mockMethods    An array of methods to mock [invokeCallable, beforeCall, afterCall]
+     * 
+     * @dependentMethod     getProject()
      */
     protected function getRouterMock(?array $mockMethods = null)
     {
