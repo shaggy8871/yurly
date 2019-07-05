@@ -24,7 +24,7 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project('www.testyurly.com', 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
+            new Project('www.testyurly.com', 'MultiSiteTests\\Site1', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -37,19 +37,19 @@ class CoreTest extends TestCase
     public function testMultisiteSite1()
     {
 
-        $this->expectOutputString('{"result":"site1"}');
+        $this->expectOutputString('site1');
 
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['HTTP_HOST'] = 'www.site1.com';
         $_SERVER['SERVER_PORT'] = 80;
         $_SERVER['SCRIPT_NAME'] = '/index.php';
         $_SERVER['SCRIPT_FILENAME'] = 'index.php';
-        $_SERVER['PATH_INFO'] = '/';
+        $_SERVER['PATH_INFO'] = '/twigtest';
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project('www.site1.com', 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
-            new Project('www.site2.com', 'MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2', true),
+            new Project('www.site1.com', 'MultiSiteTests\\Site1', './tests', true),
+            new Project('www.site2.com', 'MultiSiteTests\\Site2', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -73,8 +73,8 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project('www.site1.com', 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
-            new Project('www.site2.com', 'MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2', true),
+            new Project('www.site1.com', 'MultiSiteTests\\Site1', './tests', true),
+            new Project('www.site2.com', 'MultiSiteTests\\Site2', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -98,8 +98,8 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            'www.site1.com' => ['MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1'],
-            'www.site2.com' => ['MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2'],
+            'www.site1.com' => ['MultiSiteTests\\Site1', './tests'],
+            'www.site2.com' => ['MultiSiteTests\\Site2', './tests'],
         ];
 
         $app = new Init($projects);
@@ -123,8 +123,8 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project(new RegExp('/^.+\.site1\.com$/'), 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
-            new Project(new RegExp('/^.+\.site2\.com$/'), 'MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2', true),
+            new Project(new RegExp('/^.+\.site1\.com$/'), 'MultiSiteTests\\Site1', './tests', true),
+            new Project(new RegExp('/^.+\.site2\.com$/'), 'MultiSiteTests\\Site2', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -148,8 +148,8 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project(new RegExp('/^.+\.site1\.com$/'), 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
-            new Project(new RegExp('/^.+\.site2\.com$/'), 'MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2', true),
+            new Project(new RegExp('/^.+\.site1\.com$/'), 'MultiSiteTests\\Site1', './tests', true),
+            new Project(new RegExp('/^.+\.site2\.com$/'), 'MultiSiteTests\\Site2', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -173,7 +173,7 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project(['www.site1.com', 'prefix.site1.com'], 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
+            new Project(['www.site1.com', 'prefix.site1.com'], 'MultiSiteTests\\Site1', './tests', true),
         ];
 
         $app = new Init($projects);
@@ -197,8 +197,8 @@ class CoreTest extends TestCase
         $_SERVER['QUERY_STRING'] = '';
 
         $projects = [
-            new Project('www.site1.com', 'MultiSiteTests\\Site1', 'tests/MultiSiteTests/Site1', true),
-            new Project('www.site2.com', 'MultiSiteTests\\Site2', 'tests/MultiSiteTests/Site2', true),
+            new Project('www.site1.com', 'MultiSiteTests\\Site1', './tests', true),
+            new Project('www.site2.com', 'MultiSiteTests\\Site2', './tests', true),
         ];
 
         $app = new Init($projects);
