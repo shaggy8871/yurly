@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests\Controllers;
+namespace Tests\Controllers;
 
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\{
@@ -140,7 +140,7 @@ class Index extends Controller
     /*
      * Custom model injection test
      */
-    public function routeTestsModelsInject(\Yurly\Tests\Models\Inject $inject): void
+    public function routeTestsModelsInject(\Tests\Models\Inject $inject): void
     {
 
     }
@@ -148,7 +148,7 @@ class Index extends Controller
     /*
      * Custom model instantiation test
      */
-    public function routeTestsModelsInstantiateRequest(\Yurly\Tests\Models\InstantiateRequest $request = null): void
+    public function routeTestsModelsInstantiateRequest(\Tests\Models\InstantiateRequest $request = null): void
     {
 
     }

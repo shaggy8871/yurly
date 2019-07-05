@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests;
+namespace Tests;
 
 use Yurly\Test\TestCase;
 use Yurly\Core\{Caller, Project, Url, UrlFactory, Router};
@@ -17,7 +17,7 @@ class RouterTest extends TestCase
     public function setUp(): void
     {
 
-        $this->router = new Router(new Project('www.testyurly.com', 'Yurly\\Tests', 'tests', true));
+        $this->router = new Router(new Project('www.testyurly.com', 'Tests', 'tests', true));
 
     }
 
@@ -210,7 +210,7 @@ class RouterTest extends TestCase
     public function testUrlForArrayAsCallback()
     {
 
-        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeDefault']);
+        $urlFor = $this->router->urlFor(['Tests\\Controllers\\Index', 'routeDefault']);
 
         $this->assertEquals($urlFor, '/');
 
@@ -219,11 +219,11 @@ class RouterTest extends TestCase
     public function testUrlForArrayAsCallbackWithParams()
     {
 
-        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123', 'slug' => 'test']);
+        $urlFor = $this->router->urlFor(['Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123', 'slug' => 'test']);
 
         $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
 
-        $urlFor = $this->router->urlFor(['Yurly\\Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123']);
+        $urlFor = $this->router->urlFor(['Tests\\Controllers\\Index', 'routeUrlParamsRequest'], ['id' => '123']);
 
         $this->assertEquals($urlFor, '/urlParamsRequest/123');
 
@@ -241,10 +241,10 @@ class RouterTest extends TestCase
     public function testUrlForIsCallbackWithParams()
     {
 
-        $urlFor = $this->router->urlFor('Yurly\\Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123', 'slug' => 'test']);
+        $urlFor = $this->router->urlFor('Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123', 'slug' => 'test']);
         $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
 
-        $urlFor = $this->router->urlFor('Yurly\\Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123']);
+        $urlFor = $this->router->urlFor('Tests\\Controllers\\Index::routeUrlParamsRequest', ['id' => '123']);
         $this->assertEquals($urlFor, '/urlParamsRequest/123');
 
     }
@@ -277,7 +277,7 @@ class RouterTest extends TestCase
         $this->setProjectDefaults();
 
         // 1. Test router urlFor first; set caller for context
-        $urlFor = $this->router->urlFor('routeUrlParamsRequest', ['id' => '123', 'slug' => 'test'], new Caller('Yurly\\Tests\\Controllers\\Index', 'routeUrlForFallback2'));
+        $urlFor = $this->router->urlFor('routeUrlParamsRequest', ['id' => '123', 'slug' => 'test'], new Caller('Tests\\Controllers\\Index', 'routeUrlForFallback2'));
         $this->assertEquals($urlFor, '/urlParamsRequest/123/test');
 
         // 2. Test inside controller via URL
@@ -296,7 +296,7 @@ class RouterTest extends TestCase
         $this->setProjectDefaults();
 
         // 1. Test router urlFor first; set caller for context
-        $urlFor = $this->router->urlFor('routeDefault', [], new Caller('Yurly\\Tests\\Controllers\\Index', 'routeUrlForHome'));
+        $urlFor = $this->router->urlFor('routeDefault', [], new Caller('Tests\\Controllers\\Index', 'routeUrlForHome'));
         $this->assertEquals($urlFor, '/');
 
         $this->expectOutputString('/');
@@ -463,7 +463,7 @@ class RouterTest extends TestCase
     {
 
         return $this
-            ->setProjectNamespace('Yurly\\Tests')
+            ->setProjectNamespace('Tests')
             ->setProjectPath('tests');
 
     }

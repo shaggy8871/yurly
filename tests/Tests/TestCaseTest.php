@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests;
+namespace Tests;
 
 use Yurly\Test\TestCase;
 use Yurly\Inject\Request\RouteParams;
@@ -17,7 +17,7 @@ class TestCaseTest extends TestCase
             ->setUrl('/')
             ->getRoute();
 
-        $this->assertEquals($route, 'Yurly\\Tests\\Controllers\\Index::routeDefault');
+        $this->assertEquals($route, 'Tests\\Controllers\\Index::routeDefault');
 
     }
 
@@ -30,7 +30,7 @@ class TestCaseTest extends TestCase
             ->getCaller();
 
         $this->assertInstanceOf(\Yurly\Core\Caller::class, $caller);
-        $this->assertEquals(get_class($caller->getController()), 'Yurly\\Tests\\Controllers\\Index');
+        $this->assertEquals(get_class($caller->getController()), 'Tests\\Controllers\\Index');
         $this->assertEquals($caller->getMethod(), 'routeTwigresponse');
 
     }
@@ -103,7 +103,7 @@ class TestCaseTest extends TestCase
     {
 
         $this->setProjectDefaults()
-             ->setUrlFor(['Yurly\\Tests\\Controllers\\Index', 'routeJsonResponse']);
+             ->setUrlFor(['Tests\\Controllers\\Index', 'routeJsonResponse']);
 
         $responseResult = $this->getRouteResponse();
 
@@ -115,7 +115,7 @@ class TestCaseTest extends TestCase
     {
 
         return $this
-            ->setProjectNamespace('Yurly\\Tests')
+            ->setProjectNamespace('Tests')
             ->setProjectPath('tests');
 
     }

@@ -6,6 +6,6 @@ ini_set('display_startup_errors', 1);
 date_default_timezone_set('UTC');
 
 $loader = require dirname(__DIR__) . '/vendor/autoload.php';
-$loader->add('Yurly\\Tests\\', __DIR__);
+$loader->add('Tests\\', __DIR__);
 
 session_start();

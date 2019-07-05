@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests;
+namespace Tests;
 
 use PHPUnit\Framework\TestCase;
 use Yurly\Core\{Project, Url, Router};
@@ -11,7 +11,7 @@ class MiddlewareTest extends TestCase
     public function setUp(): void
     {
 
-        $this->router = new Router(new Project('www.testyurly.com', 'Yurly\\Tests', 'tests', true));
+        $this->router = new Router(new Project('www.testyurly.com', 'Tests', 'tests', true));
 
     }
 

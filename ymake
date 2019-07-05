@@ -7,6 +7,11 @@ $composer = json_decode(file_get_contents('composer.json'), true);
 if (isset($composer['autoload']['psr-4'])) {
     $autoloadClasses = $composer['autoload']['psr-4'];
 }
+if (isset($composer['autoload']['psr-4'])) {
+    $autoloadDevClasses = $composer['autoload-dev']['psr-4'];
+} else {
+    $autoloadDevClasses = $autoloadClasses;
+}
 
 if (!isset($autoloadClasses) || empty($autoloadClasses)) {
     echo sprintf("  ❌  Unable to find autoload namespaces from composer.json; please add there first, then try again\n");
@@ -56,7 +61,7 @@ switch ($argv[1]) {
 
     case 'controller':
         echo "\n";
-        echo "Which project do you want to create a controller in?\n";
+        echo "Which project do you want to create a controller to?\n";
         $projectClasses = array_values($autoloadClasses);
         foreach($projectClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
@@ -136,6 +141,47 @@ switch ($argv[1]) {
         createIndex($dir, $projects);
         break;
 
+    case 'test':
+        echo "\n";
+        echo "Which project do you want to add a test class to?\n";
+        $projectClasses = array_values($autoloadDevClasses);
+        foreach($projectClasses as $k => $path) {
+            echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
+        }
+        $project = readline("\nSelect project, or 0 to cancel: ");
+        if (!$project) {
+            echo "\n";
+            exit(0);
+        }
+        if (!isset($projectClasses[$project - 1])) {
+            echo sprintf("  ❌  '%d' is not a valid option.\n\n", $project);
+            exit(1);
+        }
+        $project = rtrim($projectClasses[$project - 1], '/');
+        echo $project . "\n";
+        if (!file_exists($project)) {
+            echo sprintf("  ❌  A project directory called '%s' does not exist. Please create it first.\n\n", $project);
+            exit(1);
+        }
+        $test = readline("\nName of test class (or blank to cancel): ");
+        if (!$test) {
+            echo "\n";
+            exit(0);
+        }
+        $test = trim(ucfirst($test));
+        echo "\n";
+        echo sprintf("   Creating:\n");
+        echo sprintf("   -  %s/Controllers/%s.php\n", $project, $test . 'Test');
+        echo "\n";
+        $okay = readline('Proceed (Y/n)? ');
+        if (trim(strtoupper($okay)) != 'Y') {
+            echo "\n";
+            exit(0);
+        }
+        $namespace = rtrim(array_search($project . '/', $autoloadDevClasses), '\\');
+        createTest($project, $namespace, $test);
+        break;
+
     default:
         instructions();
         break;
@@ -147,6 +193,7 @@ function instructions()
     echo "             <thing> what thing you want to create:\n";
     echo "             - project\n";
     echo "             - controller\n";
+    echo "             - test\n";
     echo "             - index\n";
     echo "\n";
     exit(1);
@@ -205,6 +252,22 @@ function createIndex(string $dir, array $autoloadClasses): void
     echo "\n";
 
 }
+
+function createTest(string $path, string $namespace, string $test): void
+{
+
+    if (!file_exists($path . '/Controllers')) {
+        mkdir($path . '/Controllers');
+    }
+
+    file_put_contents($path . '/Controllers/' . $test . 'Test.php', getTest($path, $namespace, $test));
+
+    echo "\n";
+    echo sprintf("  ✅  Created %s/Controllers/%s.php\n", $path, $test . 'Test');
+    echo "\n";
+
+}
+
 
 function getController(string $namespace, string $controller): string
 {
@@ -335,6 +398,36 @@ use Yurly\Core\{Projects, Init};
     // Handle 404 errors here
 });
 \$app->run();
+
+EOT;
+
+}
+
+function getTest(string $path, string $namespace, string $test): string
+{
+
+    return <<<EOT
+<?php
+
+namespace $namespace\Controllers;
+
+use Yurly\Test\TestCase;
+
+class ${test}Test extends TestCase
+{
+
+    public function testRoute()
+    {
+
+        \$response = \$this
+            ->setUrl('/')
+            ->getRouteResponse();
+
+        \$this->assertEquals(\$response, []);
+
+    }
+
+}
 
 EOT;
 

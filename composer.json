@@ -19,15 +19,14 @@
     },
     "autoload": {
         "psr-4": {
-            "Yurly\\": "./src/Yurly/",
-            "John\\": "./src/John/"
+            "Yurly\\": "./src/Yurly/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": "tests/Tests/",
-            "Site1\\": "tests/Yurly/_sites/Site1/",
-            "Site2\\": "tests/Yurly/_sites/Site2/"
+            "Tests\\": "./tests/Tests/",
+            "MultiSiteTests\\Site1\\": "./tests/MultiSiteTests/Site1/",
+            "MultiSiteTests\\Site2\\": "./tests/MultiSiteTests/Site2/"
         }
     },
     "bin": [

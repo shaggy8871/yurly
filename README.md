@@ -442,7 +442,13 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
     "autoload": {
         "psr-4": {
             "Site1\\": "./src/Site1/",
-            "Site2\\": "./src/Site2/",
+            "Site2\\": "./src/Site2/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Site1\\": "./tests/Site1/",
+            "Tests\\Site2\\": "./tests/Site2/"
         }
     }
 ```
@@ -454,6 +460,7 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 | `vendor/bin/ymake project` | A full project, including an Index controller |
 | `vendor/bin/ymake controller` | A controller, model and view | Project must exist first |
 | `vendor/bin/ymake index` | An index.php file |
+| `vendor/bin/ymake test` | A unit test class | Requires `autoload-dev` in composer.json
 
 You will be prompted for further details based on the command used.
 
@@ -464,19 +471,19 @@ Yurly extends PHPUnit's TestCase class with additional methods to help with test
 ```php
 <?php
 
-namespace Myapp\Tests;
+namespace Tests\Controllers;
 
 use Yurly\Test\TestCase;
 
-class Test extends TestCase
+class ExampleTest extends TestCase
 {
 
     public function testRoute()
     {
 
         $response = $this
-            ->setProjectNamespace('Myapp\\Tests')
-            ->setProjectPath('./tests');
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
             ->setUrl('/')
             ->getRouteResponse();
 
@@ -492,11 +499,11 @@ If you prefer to capture the full route response output, just call the route as 
 ```php
 <?php
 
-namespace Myapp\Tests;
+namespace Tests\Controllers;
 
 use Yurly\Test\TestCase;
 
-class Test extends TestCase
+class ExampleTest extends TestCase
 {
 
     public function testRoute()
@@ -505,8 +512,8 @@ class Test extends TestCase
         $this->expectOutputString('<h1>Welcome to Yurly!</h1>');
 
         $response = $this
-            ->setProjectNamespace('Myapp\\Tests')
-            ->setProjectPath('./tests');
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
             ->setUrl('/')
             ->callRoute();
 
@@ -522,12 +529,12 @@ You can mock request classes in order to test your controllers with different in
 ```php
 <?php
 
-namespace Myapp\Tests;
+namespace Tests\Controllers;
 
 use Yurly\Test\TestCase;
 use Yurly\Inject\Request\Get;
 
-class Test extends TestCase
+class ExampleTest extends TestCase
 {
 
     public function testRouteWithRequestMock()
@@ -538,8 +545,8 @@ class Test extends TestCase
         });
 
         $response = $this
-            ->setProjectNamespace('Myapp\\Tests')
-            ->setProjectPath('./tests');
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
             ->setUrl('/')
             ->getRouteResponse([
                 Get::class => $mockRequest
@@ -559,12 +566,12 @@ You can mock the response class as well, and capture the output before it render
 ```php
 <?php
 
-namespace Myapp\Tests;
+namespace Tests\Controllers;
 
 use Yurly\Test\TestCase;
 use Yurly\Inject\Response\Twig;
 
-class Test extends TestCase
+class ExampleTest extends TestCase
 {
 
     public function testRouteWithResponseMock()
@@ -575,8 +582,8 @@ class Test extends TestCase
         });
 
         $this
-            ->setProjectNamespace('Myapp\\Tests')
-            ->setProjectPath('./tests');
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
             ->setUrl('/')
             ->callRouteWithMocks([
                 Twig::class => $mockResponse

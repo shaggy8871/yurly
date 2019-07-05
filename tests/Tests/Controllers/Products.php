@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests\Controllers;
+namespace Tests\Controllers;
 
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\RouteParams;
