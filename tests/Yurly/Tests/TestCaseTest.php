@@ -42,7 +42,20 @@ class TestCaseTest extends TestCase
 
         $this
             ->setProjectDefaults()
-            ->callRoute('/');
+            ->setUrl('/')
+            ->callRoute();
+
+    }
+
+    public function testGetRouteResponse()
+    {
+
+        $response = $this
+            ->setProjectDefaults()
+            ->setUrl('/twigresponse')
+            ->getRouteResponse();
+
+        $this->assertEquals($response, ['twig' => 'Okay']);
 
     }
 
@@ -50,7 +63,8 @@ class TestCaseTest extends TestCase
     {
 
         $this
-            ->setProjectDefaults();
+            ->setProjectDefaults()
+            ->setUrl('/urlParamsRequest/123/test');
 
         $requestProps = ['id' => '456', 'slug' => 'hydrated'];
 
@@ -60,7 +74,7 @@ class TestCaseTest extends TestCase
         $this->expectOutputString(json_encode(['id' => '456', 'slug' => 'hydrated']));
 
         $this
-            ->callRouteWithMocks('/urlParamsRequest/123/test', [
+            ->callRouteWithMocks([
                 RouteParams::class => $mockRequest
             ]);
 
@@ -70,7 +84,8 @@ class TestCaseTest extends TestCase
     {
 
         $this
-            ->setProjectDefaults();
+            ->setProjectDefaults()
+            ->setUrl('/jsonresponse');
 
         $responseResult = [];
 
@@ -78,9 +93,21 @@ class TestCaseTest extends TestCase
             ->getResponseMock(Json::class, function($params) use (&$responseResult) { $responseResult = $params; });
 
         $this
-            ->callRouteWithMocks('/jsonresponse', [
+            ->callRouteWithMocks([
                 Json::class => $mockResponse
             ]);
+
+        $this->assertEquals($responseResult, ['json' => true]);
+
+    }
+
+    public function testSetUrlFor()
+    {
+
+        $this->setProjectDefaults()
+             ->setUrlFor(['Yurly\\Tests\\Controllers\\Index', 'routeJsonResponse']);
+
+        $responseResult = $this->getRouteResponse();
 
         $this->assertEquals($responseResult, ['json' => true]);
 

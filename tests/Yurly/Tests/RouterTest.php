@@ -263,7 +263,8 @@ class RouterTest extends TestCase
 
         // 2. Test inside controller via URL
         $this->expectOutputString('/products/urlParamsRequest/123/test');
-        $this->callRoute('/urlforfallback1');
+        $this->setUrl('/urlforfallback1')
+             ->callRoute();
 
     }
 
@@ -281,7 +282,8 @@ class RouterTest extends TestCase
 
         // 2. Test inside controller via URL
         $this->expectOutputString('/urlParamsRequest/123/test');
-        $this->callRoute('/urlforfallback2');
+        $this->setUrl('/urlforfallback2')
+             ->callRoute();
 
     }
 
@@ -300,7 +302,8 @@ class RouterTest extends TestCase
         $this->expectOutputString('/');
 
         // 2. Test inside controller via URL
-        $this->callRoute('/urlforhome');
+        $this->setUrl('/urlforhome')
+             ->callRoute();
 
     }
 
