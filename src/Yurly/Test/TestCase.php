@@ -241,9 +241,11 @@ class TestCase extends PhpUnitTestCase
      * Returns the raw route response, typically an array, rather than the resulting
      * string output.
      * 
+     * @var $mockParams     Optional; an array of request/response classes to mock
+     * 
      * @dependentMethod     setCaller(), getCaller(), callRouteWithMocks()
      */
-    protected function getRouteResponse()
+    protected function getRouteResponse(array $mockParams = [])
     {
 
         $responseResult = null;
@@ -255,11 +257,13 @@ class TestCase extends PhpUnitTestCase
 
         $reflection = new \ReflectionMethod($caller->getController(), $caller->getMethod());
 
-        $mockParams = [];
         foreach($reflection->getParameters() as $param) {
             try {
                 $paramClass = $param->getClass();
                 if ($paramClass->isSubclassOf('Yurly\\Inject\\Response\\ResponseInterface')) {
+                    if (isset($mockParams[$paramClass->name])) {
+                        throw new \Exception(sprintf("The getRouteResponse() method injects a mock response class by default."));
+                    }
                     $mockParams[$paramClass->name] = $this->getResponseMock($paramClass->name, function($params) use (&$responseResult) { $responseResult = $params; });
                 }
             } catch (\Exception $e) {
@@ -269,7 +273,7 @@ class TestCase extends PhpUnitTestCase
 
         // No response method found? Throw an exception to notify
         if (empty($mockParams)) {
-            throw new \Exception(sprintf("No Response class found in '%s'", ($caller->getController() ? get_class($caller->getController()) . '::' : '') . $caller->getMethod()));
+            throw new \Exception(sprintf("No Response class found in '%s'.", ($caller->getController() ? get_class($caller->getController()) . '::' : '') . $caller->getMethod()));
         }
 
         $this->callRouteWithMocks($mockParams);
@@ -402,9 +406,27 @@ class TestCase extends PhpUnitTestCase
     }
 
     /**
+     * Resets all saved private values
+     */
+    protected function reset(): void
+    {
+
+        $this->project = null;
+        $this->projectHost = null;
+        $this->projectNamespace = null;
+        $this->projectPath = null;
+        $this->projectDebugMode = null;
+        $this->url = null;
+        $this->caller = null;
+        $this->context = null;
+        $this->routerMock = null;
+
+    }
+
+    /**
      * Get default namespace and path settings for projects
      */
-    protected function getComposerDefaults()
+    private function getComposerDefaults()
     {
 
         $composer = json_decode(file_get_contents('composer.json'), true);

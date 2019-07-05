@@ -66,10 +66,10 @@ class TestCaseTest extends TestCase
             ->setProjectDefaults()
             ->setUrl('/urlParamsRequest/123/test');
 
-        $requestProps = ['id' => '456', 'slug' => 'hydrated'];
-
         $mockRequest = $this
-            ->getRequestMock(RouteParams::class, function($self) use ($requestProps) { $self->setProps($requestProps); });
+            ->getRequestMock(RouteParams::class, function($self) {
+                $self->setProps(['id' => '456', 'slug' => 'hydrated']);
+            });
 
         $this->expectOutputString(json_encode(['id' => '456', 'slug' => 'hydrated']));
 
@@ -87,17 +87,15 @@ class TestCaseTest extends TestCase
             ->setProjectDefaults()
             ->setUrl('/jsonresponse');
 
-        $responseResult = [];
-
         $mockResponse = $this
-            ->getResponseMock(Json::class, function($params) use (&$responseResult) { $responseResult = $params; });
+            ->getResponseMock(Json::class, function($params) {
+                $this->assertEquals($params, ['json' => true]);
+            });
 
         $this
             ->callRouteWithMocks([
                 Json::class => $mockResponse
             ]);
-
-        $this->assertEquals($responseResult, ['json' => true]);
 
     }
 

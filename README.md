@@ -456,3 +456,133 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 | `vendor/bin/ymake index` | An index.php file |
 
 You will be prompted for further details based on the command used.
+
+## Unit testing
+
+Yurly extends PHPUnit's TestCase class with additional methods to help with testing of routes. Here's a simple example:
+
+```php
+<?php
+
+namespace Myapp\Tests;
+
+use Yurly\Test\TestCase;
+
+class Test extends TestCase
+{
+
+    public function testRoute()
+    {
+
+        $response = $this
+            ->setProjectNamespace('Myapp\\Tests')
+            ->setProjectPath('./tests');
+            ->setUrl('/')
+            ->getRouteResponse();
+
+        $this->assertEquals($response, ['message' => 'Welcome!']);
+
+    }
+
+}
+```
+
+If you prefer to capture the full route response output, just call the route as follows:
+
+```php
+<?php
+
+namespace Myapp\Tests;
+
+use Yurly\Test\TestCase;
+
+class Test extends TestCase
+{
+
+    public function testRoute()
+    {
+
+        $this->expectOutputString('<h1>Welcome to Yurly!</h1>');
+
+        $response = $this
+            ->setProjectNamespace('Myapp\\Tests')
+            ->setProjectPath('./tests');
+            ->setUrl('/')
+            ->callRoute();
+
+    }
+
+}
+```
+
+You can mock request classes in order to test your controllers with different inputs.
+
+> The class type declared in the route method cannot be changed.
+
+```php
+<?php
+
+namespace Myapp\Tests;
+
+use Yurly\Test\TestCase;
+use Yurly\Inject\Request\Get;
+
+class Test extends TestCase
+{
+
+    public function testRouteWithRequestMock()
+    {
+
+        $mockRequest = $this->getRequestMock(Get::class, function($self) {
+            $self->setProps(['hello' => 'World']);
+        });
+
+        $response = $this
+            ->setProjectNamespace('Myapp\\Tests')
+            ->setProjectPath('./tests');
+            ->setUrl('/')
+            ->getRouteResponse([
+                Get::class => $mockRequest
+            ]);
+
+        $this->assertEquals($response, ['message' => 'World']);
+
+    }
+
+}
+```
+
+You can mock the response class as well, and capture the output before it renders.
+
+> You cannot pass a mock Request class to `getRouteResponse` as it already uses one to capture the output. Instead, use the `callRouteWithMocks` method.
+
+```php
+<?php
+
+namespace Myapp\Tests;
+
+use Yurly\Test\TestCase;
+use Yurly\Inject\Response\Twig;
+
+class Test extends TestCase
+{
+
+    public function testRouteWithResponseMock()
+    {
+
+        $mockResponse = $this->getResponseMock(Twig::class, function($params) {
+            $this->assertEquals($params, ['message' => 'Welcome!']);
+        });
+
+        $this
+            ->setProjectNamespace('Myapp\\Tests')
+            ->setProjectPath('./tests');
+            ->setUrl('/')
+            ->callRouteWithMocks([
+                Twig::class => $mockResponse
+            ]);
+
+    }
+
+}
+```
