@@ -6,6 +6,8 @@ include_once("vendor/autoload.php");
 $composer = json_decode(file_get_contents('composer.json'), true);
 if (isset($composer['autoload']['psr-4'])) {
     $autoloadClasses = $composer['autoload']['psr-4'];
+} else {
+    $autoloadClasses = [];
 }
 if (isset($composer['autoload']['psr-4'])) {
     $autoloadDevClasses = $composer['autoload-dev']['psr-4'];
@@ -202,10 +204,10 @@ function instructions()
 function createProject(string $project, string $namespace): void
 {
 
-    mkdir($project);
-    mkdir($project . '/Controllers');
-    mkdir($project . '/Models');
-    mkdir($project . '/Views');
+    mkdir($project, 0755, true);
+    mkdir($project . '/Controllers', 0755, true);
+    mkdir($project . '/Models', 0755, true);
+    mkdir($project . '/Views', 0755, true);
 
     createController($project, $namespace, 'Index');
 
@@ -214,7 +216,7 @@ function createProject(string $project, string $namespace): void
 function createController(string $project, string $namespace, string $controller): void
 {
 
-    mkdir($project . '/Views/' . $controller);
+    mkdir($project . '/Views/' . $controller, 0755, true);
 
     echo "\n";
 
@@ -238,6 +240,10 @@ function createController(string $project, string $namespace, string $controller
         echo sprintf("  ✅  Created %s/Views/%s/default.html.twig\n", $project, $controller);
     }
 
+    if (!file_exists($project . '/Views/cache')) {
+        mkdir($project . '/Views/cache', 0755);
+    }
+
     echo "\n";
 
 }
@@ -257,7 +263,7 @@ function createTest(string $path, string $namespace, string $test): void
 {
 
     if (!file_exists($path . '/Controllers')) {
-        mkdir($path . '/Controllers');
+        mkdir($path . '/Controllers', 0755, true);
     }
 
     file_put_contents($path . '/Controllers/' . $test . 'Test.php', getTest($path, $namespace, $test));
@@ -311,9 +317,9 @@ function getModel(string $namespace, string $controller): string
 namespace $namespace\Models;
 
 use Yurly\Core\Project;
-use Yurly\Core\Inject\Request;
+use Yurly\Inject\Request\Get;
 
-class $controller extends Controller
+class $controller
 {
 
     private \$project;
@@ -323,7 +329,7 @@ class $controller extends Controller
         \$this->project = \$project;
     }
 
-    public function default(Request \$request): array
+    public function default(Get \$request): array
     {
         return [
             'title'   => '$controller',

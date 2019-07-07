@@ -26,6 +26,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->get) {
             $this->get = new Get($this->context);
+            $this->get->hydrate();
         }
 
         return $this->get;
@@ -40,6 +41,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->post) {
             $this->post = new Post($this->context);
+            $this->post->hydrate();
         }
 
         return $this->post;
@@ -54,6 +56,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->put) {
             $this->put = new Put($this->context);
+            $this->put->hydrate();
         }
 
         return $this->put;
@@ -68,6 +71,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->delete) {
             $this->delete = new Delete($this->context);
+            $this->delete->hydrate();
         }
 
         return $this->delete;
@@ -82,6 +86,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->patch) {
             $this->patch = new Patch($this->context);
+            $this->patch->hydrate();
         }
 
         return $this->patch;
@@ -96,6 +101,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->routeParams) {
             $this->routeParams = new RouteParams($this->context);
+            $this->routeParams->hydrate();
         }
 
         return $this->routeParams;

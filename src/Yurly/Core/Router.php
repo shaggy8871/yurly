@@ -366,7 +366,7 @@ class Router
                     }
                     // If this is a response class, set the default view filename
                     if ($this->isResponseClass($paramInstance)) {
-                        if (($class) && (is_callable([$paramInstance, 'setViewFilename']))) {
+                        if (($class) && (is_callable([$paramInstance, 'setView']))) {
                             $this->setResponseDefaults($paramInstance, $reflection, $class);
                         }
                         // Set the default response class if one isn't already set
@@ -388,26 +388,24 @@ class Router
 
         $this->afterCall($response, $class);
 
-        if (($response !== false) && ($response !== null)) {
-            // If object is a Response class, simply call the render method (assume it knows what to do)
-            // Otherwise call the render method on the defined/default response class
-            if ((is_object($response)) && ($this->isResponseClass($response))) {
-                $response->render();
+        // If object is a Response class, simply call the render method (assume it knows what to do)
+        // Otherwise call the render method on the defined/default response class
+        if ((is_object($response)) && ($this->isResponseClass($response))) {
+            $response->render();
+        } else {
+            // If we have a default response class set, use it
+            if ($defaultResponseClass) {
+                $responseClass = $defaultResponseClass;
             } else {
-                // If we have a default response class set, use it
-                if ($defaultResponseClass) {
-                    $responseClass = $defaultResponseClass;
-                } else {
-                    $responseClass = new \Yurly\Inject\Response\Html(
-                        new Context($this->project, $this->url, $this->caller)
-                    );
-                    if (is_callable([$responseClass, 'setViewFilename'])) {
-                        $this->setResponseDefaults($responseClass, $reflection, $class);
-                    }
+                $responseClass = new \Yurly\Inject\Response\Html(
+                    new Context($this->project, $this->url, $this->caller)
+                );
+                if (is_callable([$responseClass, 'setView'])) {
+                    $this->setResponseDefaults($responseClass, $reflection, $class);
                 }
-                if (is_callable([$responseClass, 'render'])) {
-                    $responseClass->render($response);
-                }
+            }
+            if (is_callable([$responseClass, 'render'])) {
+                $responseClass->render($response);
             }
         }
 
@@ -675,7 +673,7 @@ class Router
     protected function setResponseDefaults($responseClass, $reflection, $controllerClass = null): void
     {
 
-        if (!is_callable([$responseClass, 'setViewFilename'])) {
+        if (!is_callable([$responseClass, 'setView'])) {
             return;
         }
         // Not available if it's a closure since we have no context
@@ -691,7 +689,10 @@ class Router
             // Inject view filename
             $methodName = $reflection->getName();
             if (substr($methodName, 0, strlen('route')) == 'route') {
-                $responseClass->setViewFilename($controllerPath['filename'] . '/' . strtolower(str_replace('route', '', $methodName)));
+                $responseClass->setView([
+                    'filename' => $controllerPath['filename'] . '/' . strtolower(str_replace('route', '', $methodName)),
+                    'dir' => str_replace('/Controllers', '/Views', $controllerPath['dirname']),
+                ]);
             }
         }
 

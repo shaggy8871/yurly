@@ -5,6 +5,9 @@ namespace Yurly\Core;
 class Project
 {
 
+    const DEBUG_ON  = true;
+    const DEBUG_OFF = false;
+
     protected $hosts;
     protected $ns;
     protected $debugMode;
@@ -12,7 +15,7 @@ class Project
     protected $config;
     protected $services;
 
-    public function __construct($hosts, string $ns, string $path = '', bool $debugMode = false)
+    public function __construct($hosts, string $ns, string $path = '', bool $debugMode = self::DEBUG_OFF)
     {
 
         $configClass = $ns . '\\Config';
