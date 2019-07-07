@@ -10,6 +10,7 @@ class Request extends RequestFoundation implements RequestInterface
     const TYPE_PUT = 'Put';
     const TYPE_DELETE = 'Delete';
     const TYPE_PATCH = 'Patch';
+    const TYPE_ROUTE_PARAMS = 'RouteParams';
 
     protected $get;
     protected $post;
@@ -155,6 +156,16 @@ class Request extends RequestFoundation implements RequestInterface
     {
 
         return $this->type == self::TYPE_PATCH;
+
+    }
+
+    /**
+     * @return boolean if this request is a RouteParams
+     */
+    public function isRouteParams(): bool
+    {
+
+        return $this->type == self::TYPE_ROUTE_PARAMS;
 
     }
 
