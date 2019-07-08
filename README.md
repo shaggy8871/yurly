@@ -330,18 +330,16 @@ class UserJsonDataMapper extends Json
      */
     public function render($params = null): void
     {
-        $user = ($params instanceof User ? $params : null);
-
-        if ($user) {
+        if ($params instanceof User) {
             parent::render([
-                'first_name' => $user->fname,
-                'last_name' => $user->lname,
+                'first_name' => $params->fname,
+                'last_name'  => $params->lname,
             ]);
             return;
         }
 
         parent::render([
-            'error' => 'Not Found'
+            'error' => 'User Not Found'
         ]);
     }
 
