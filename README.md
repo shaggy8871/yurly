@@ -302,22 +302,13 @@ use Myapp\Models\User;
 class UserFinder extends RouteParams
 {
 
-    protected $user;
-
-    public function hydrate(): void
+    public function find(): ?User
     {
-        // Be sure to hydrate the parent first to set default values
-        parent::hydrate();
-
-        // Look up user
-        if (isset($this->props['id'])) {
-            $this->user = User::findById($this->props['id']);
+        $userId = filter_var($this->id, FILTER_VALIDATE_INT);
+        if ($userId) {
+            return User::findById($userId);
         }
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->user;
+        return null;
     }
 
 }
@@ -373,9 +364,9 @@ class User extends Controller
     /**
      * @canonical /user/:id
      */
-    public function routeDefault(UserFinder $user, UserJsonDataMapper $response): ?UserModel
+    public function routeDefault(UserFinder $request, UserJsonDataMapper $response): ?UserModel
     {
-        return $user->getUser();
+        return $request->find();
     }
 
 }
