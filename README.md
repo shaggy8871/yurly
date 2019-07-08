@@ -302,22 +302,13 @@ use Myapp\Models\User;
 class UserFinder extends RouteParams
 {
 
-    protected $user;
-
-    public function hydrate(): void
+    public function find(): ?User
     {
-        // Be sure to hydrate the parent first to set default values
-        parent::hydrate();
-
-        // Look up user
-        if (isset($this->props['id'])) {
-            $this->user = User::findById($this->props['id']);
+        $userId = filter_var($this->id, FILTER_VALIDATE_INT);
+        if ($userId) {
+            return User::findById($userId);
         }
-    }
-
-    public function getUser(): ?User
-    {
-        return $this->user;
+        return null;
     }
 
 }
@@ -339,18 +330,16 @@ class UserJsonDataMapper extends Json
      */
     public function render($params = null): void
     {
-        $user = ($params instanceof User ? $params : null);
-
-        if ($user) {
+        if ($params instanceof User) {
             parent::render([
-                'first_name' => $user->fname,
-                'last_name' => $user->lname,
+                'first_name' => $params->fname,
+                'last_name'  => $params->lname,
             ]);
             return;
         }
 
         parent::render([
-            'error' => 'Not Found'
+            'error' => 'User Not Found'
         ]);
     }
 
@@ -373,9 +362,9 @@ class User extends Controller
     /**
      * @canonical /user/:id
      */
-    public function routeDefault(UserFinder $user, UserJsonDataMapper $response): ?UserModel
+    public function routeDefault(UserFinder $request, UserJsonDataMapper $response): ?UserModel
     {
-        return $user->getUser();
+        return $request->find();
     }
 
 }
