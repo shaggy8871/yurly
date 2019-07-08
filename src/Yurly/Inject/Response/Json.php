@@ -7,7 +7,7 @@ class Json extends ResponseFoundation implements ResponseInterface
 
     protected $contentType = 'application/json';
 
-    /*
+    /**
      * Render content in Json encoded format
      */
     public function render($params = null): void

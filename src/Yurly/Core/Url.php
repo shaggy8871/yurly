@@ -36,7 +36,7 @@ class Url
 
     }
 
-    /*
+    /**
      * Magic getter prevents class values from being overwritten
      */
     public function __get(string $property)
@@ -50,7 +50,7 @@ class Url
 
     }
 
-    /*
+    /**
      * Activate getProperty() style method calls
      */
     public function __call(string $name, array $args)
@@ -67,7 +67,7 @@ class Url
 
     }
 
-    /*
+    /**
      * Returns true if the property exists
      */
     public function __isset(string $property): bool

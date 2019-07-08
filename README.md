@@ -20,8 +20,7 @@ Then run:
 composer install
 ```
 
-Example public/index.php file
-
+Example public/index.php file:
 ```php
 <?php
 include_once "../vendor/autoload.php";
@@ -29,15 +28,15 @@ include_once "../vendor/autoload.php";
 use Yurly\Core\{Project, Init};
 
 /**
- * Project($hostname, $namespace, $pathToNamespace)
+ * Project($hostname, $namespace, $pathToNamespace, $debugMode)
  */
 $projects = [
-    new Project($_SERVER['HTTP_HOST'], 'Myapp', './src'),
+    new Project($_SERVER['HTTP_HOST'], 'Myapp', './src', Project::DEBUG_ON),
 ];
 
 $app = new Init($projects);
 
-$app->onRouteNotFound(function(array \$data) {
+$app->onRouteNotFound(function(array $data) {
     // Handle 404 errors here
 });
 
@@ -58,8 +57,9 @@ By default, routes are determined based on the controller class name and method 
 
 Controllers must extend the `Yurly\Core\Controller` class, and must contain at least one method name prefixed with the word `route`.
 
-> `Request` and `Response` classes can be injected into any route method. The first `Response` class found will be used to render any value returned from the `route*` method. If nothing is returned, no content will be output.
+> `Request` and `Response` classes can be injected into any route method. The first `Response` class found will be used to render any value returned from the `route*` method.
 
+Example src/Controllers/Index.php file:
 ```php
 <?php
 
@@ -67,7 +67,7 @@ namespace Myapp\Controllers;
 
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\Get;
-use Yurly\Inject\Response\Twig;
+use Yurly\Inject\Response\{Twig, Json};
 
 class Index extends Controller
 {
@@ -77,12 +77,10 @@ class Index extends Controller
      */
     public function routeDefault(Get $request, Twig $response): array
     {
-
         return [
             'title' => 'Welcome to Yurly',
             'content' => 'You\'re on the home page. You can customize this view in Myapp/Views/Index/default.html.twig.'
         ];
-
     }
 
     /**
@@ -90,12 +88,10 @@ class Index extends Controller
      */
     public function routeAbout(Get $request, Twig $response): array
     {
-
         return [
             'title' => 'About Us',
             'content' => 'You can customize this page in <Yourapp>/Views/Index/about.html.twig.'
         ];
-
     }
 
     /**
@@ -103,13 +99,11 @@ class Index extends Controller
      */
     public function routeJson(Get $request, Json $response): array
     {
-
         return [
             'title' => 'JSON',
             'content' => 'This will be output in JSON format',
             'params' => $request->toArray(), // be aware - unsanitised! 
         ];
-
     }
 
 }
@@ -123,6 +117,9 @@ Route parameters can be specified using a `@canonical` docblock statement above 
 ```php
 <?php
 
+namespace Myapp\Controllers;
+
+use Yurly\Core\Controller;
 use Yurly\Inject\Request\RouteParams;
 use Yurly\Inject\Response\Json;
 
@@ -134,7 +131,6 @@ class Example extends Controller
      */
     public function routeDefault(RouteParams $request, Json $response)
     {
-
         return $request->toArray();
 
         /**
@@ -142,7 +138,6 @@ class Example extends Controller
          *  - $request->requiredParam
          *  - $request->optionalParam
          */
-
     }
 
 }
@@ -153,8 +148,8 @@ In the example above, calling /example/hello/world will return a JSON response a
 
 ```json
 {
-    "requiredParam": "hello",
-    "optionalParam": "world"
+    "requiredParam":"hello",
+    "optionalParam":"world"
 }
 ```
 
@@ -165,6 +160,9 @@ The generic `Request` class has helper functions that can be used to extract mul
 ```php
 <?php
 
+namespace Myapp\Controllers;
+
+use Yurly\Core\Controller;
 use Yurly\Inject\Request\Request;
 use Yurly\Inject\Response\Json;
 
@@ -173,7 +171,6 @@ class Example extends Controller
 
     public function routeDefault(Request $request, Json $response)
     {
-
         // GET parameters
         $getParams = $request->get();
 
@@ -185,7 +182,6 @@ class Example extends Controller
          *  - $getParams->paramName
          *  - $postParams->paramName
          */
-
     }
 
 }
@@ -203,14 +199,13 @@ Return an alternative route in the format `Controller::method` to have it render
 
 namespace Myapp\Middleware;
 
-use Frame\Core\{Url, Context};
+use Yurly\Core\{Url, Context};
 
 trait Auth
 {
 
     public function isLoggedIn(Url $url, Context $context)
     {
-
         $caller = $context->getCaller();
         $annotations = $caller->getAnnotations();
 
@@ -223,14 +218,11 @@ trait Auth
         if (!$this->authenticate($roles)) {
             return 'User::routeLogout';
         }
-
     }
 
     private function authenticate(array $roles): bool
     {
-
         // Add your auth code here
-
     }
 
 }
@@ -256,11 +248,9 @@ class Admin extends Controller
      */
     public function routeDefault(Get $request, Twig $response): array
     {
-
         return [
             'message' => 'Welcome!'
         ];
-
     }
 
 }
@@ -269,59 +259,126 @@ class Admin extends Controller
 
 ## Custom Request/Response Classes
 
-Custom Request and Response classes may be created to supply additional functionality not already supplied by the built-in classes. Examples include additional input sources, improved input sanitisation and custom models.
+Custom Request and Response classes may be created to supply additional functionality not already supplied by the built-in classes. Examples include additional input sources, improved input sanitisation and output data mapping.
 
+### Model Lookup and Data Mapper Example
+
+src/Myapp/Models/User.php:
+```php
+<?php
+
+namespace Myapp\Models;
+
+class User
+{
+
+    public $fname;
+    public $lname;
+    //... more props
+
+    // Example find method
+    public static function findById(int $id): ?self
+    {
+        if ($id == 1) {
+            $instance = new static();
+            $instance->fname = 'First name';
+            $instance->lname = 'Last name';
+            return $instance;
+        }
+        return null;
+    }
+
+}
+```
+src/Myapp/Inject/Request/UserFinder.php:
 ```php
 <?php
 
 namespace Myapp\Inject\Request;
 
-use Yurly\Core\Context;
-use Yurly\Inject\Request\Request;
+use Yurly\Inject\Request\RouteParams;
+use Myapp\Models\User;
 
-class FilteredRequest extends Request
+class UserFinder extends RouteParams
 {
 
-    public function __construct(Context $context)
+    protected $user;
+
+    public function hydrate(): void
     {
+        // Be sure to hydrate the parent first to set default values
+        parent::hydrate();
 
-        parent::__construct($context);
-
-        // Filter inputs
-        foreach($this->get() as &$param) {
-            $param = filter_var($param, FILTER_SANITIZE_STRING);
+        // Look up user
+        if (isset($this->props['id'])) {
+            $this->user = User::findById($this->props['id']);
         }
-        foreach($this->post() as &$param) {
-            $param = filter_var($param, FILTER_SANITIZE_STRING);
-        }
+    }
 
+    public function getUser(): ?User
+    {
+        return $this->user;
     }
 
 }
 ```
+src/Myapp/Inject/Response/UserJsonDataMapper.php:
+```php
+<?php
+
+namespace Myapp\Inject\Response;
+
+use Yurly\Inject\Response\Json;
+use Myapp\Models\User;
+
+class UserJsonDataMapper extends Json
+{
+
+    /**
+     * Render parameters with data mapping
+     */
+    public function render($params = null): void
+    {
+        $user = ($params instanceof User ? $params : null);
+
+        if ($user) {
+            parent::render([
+                'first_name' => $user->fname,
+                'last_name' => $user->lname,
+            ]);
+            return;
+        }
+
+        parent::render([
+            'error' => 'Not Found'
+        ]);
+    }
+
+}
+```
+src/Myapp/Controllers/User.php:
 ```php
 <?php
 
 namespace Myapp\Controllers;
 
-use Myapp\Inject\Request\FilteredRequest;
 use Yurly\Core\Controller;
-use Yurly\Inject\Response\Json;
+use Myapp\Inject\Request\UserFinder;
+use Myapp\Inject\Response\UserJsonDataMapper;
+use Myapp\Models\User as UserModel;
 
-class Rest extends Controller
+class User extends Controller
 {
 
-    public function routeDefault(FilteredRequest $request, Json $response): array
+    /**
+     * @canonical /user/:id
+     */
+    public function routeDefault(UserFinder $user, UserJsonDataMapper $response): ?UserModel
     {
-
-        return [
-            'filteredInputs' => $request->get()->toArray() // now filtered
-        ];
-
+        return $user->getUser();
     }
 
 }
-
 ```
 
 ## Custom Route Resolvers
@@ -331,6 +388,8 @@ If you have routes that don't follow the controller/method approach, it's easy t
 Create a class called `RouteResolver` at the base of your project directory, and ensure it `implements RouteResolverInterface`. It must contain one method called `resolve` that returns a route in the format `Controller::method`. Any other return value will be ignored.
 
 ```php
+<?php
+
 namespace Myapp;
 
 use Yurly\Core\{Project, Url};
@@ -342,7 +401,6 @@ class RouteResolver implements RouteResolverInterface
 
     public function resolve(Project $project, Url $url)
     {
-
         $routes = [
             [
                 'match' => new RegExp('/^\/[a-z0-9]+\/product\/[a-z0-9]+\/?$/'),
@@ -356,7 +414,6 @@ class RouteResolver implements RouteResolverInterface
                 return $route['route'];
             }
         }
-
     }
 
 }
@@ -442,7 +499,13 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
     "autoload": {
         "psr-4": {
             "Site1\\": "./src/Site1/",
-            "Site2\\": "./src/Site2/",
+            "Site2\\": "./src/Site2/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\Site1\\": "./tests/Site1/",
+            "Tests\\Site2\\": "./tests/Site2/"
         }
     }
 ```
@@ -454,5 +517,132 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 | `vendor/bin/ymake project` | A full project, including an Index controller |
 | `vendor/bin/ymake controller` | A controller, model and view | Project must exist first |
 | `vendor/bin/ymake index` | An index.php file |
+| `vendor/bin/ymake test` | A unit test class | Requires `autoload-dev` in composer.json
 
 You will be prompted for further details based on the command used.
+
+## Unit testing
+
+Yurly extends PHPUnit's TestCase class with additional methods to help with testing of routes. Here's a simple example:
+
+```php
+<?php
+
+namespace Tests\Controllers;
+
+use Yurly\Test\TestCase;
+
+class ExampleTest extends TestCase
+{
+
+    public function testRoute()
+    {
+        $response = $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/')
+            ->getRouteResponse();
+
+        $this->assertEquals($response, ['message' => 'Welcome!']);
+    }
+
+}
+```
+
+If you prefer to capture the full route response output, just call the route as follows:
+
+```php
+<?php
+
+namespace Tests\Controllers;
+
+use Yurly\Test\TestCase;
+
+class ExampleTest extends TestCase
+{
+
+    public function testRoute()
+    {
+        $this->expectOutputString('<h1>Welcome to Yurly!</h1>');
+
+        $response = $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/')
+            ->callRoute();
+    }
+
+}
+```
+
+You can mock request classes in order to test your controllers with different inputs.
+
+> The class type declared in the route method cannot be changed.
+
+```php
+<?php
+
+namespace Tests\Controllers;
+
+use Yurly\Test\TestCase;
+use Yurly\Inject\Request\Get;
+
+class ExampleTest extends TestCase
+{
+
+    public function testRouteWithRequestMock()
+    {
+        $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/');
+
+        $mockRequest = $this->getRequestMock(Get::class, function($self) {
+            $self->setProps(['hello' => 'World']);
+        });
+
+        $response = $this
+            ->getRouteResponse([
+                Get::class => $mockRequest
+            ]);
+
+        $this->assertEquals($response, ['message' => 'World']);
+    }
+
+}
+```
+
+You can mock the response class as well, and capture the output before it renders.
+
+> You cannot pass a mock Request class to `getRouteResponse` as it already uses one to capture the output. Instead, use the `callRouteWithMocks` method.
+
+```php
+<?php
+
+namespace Tests\Controllers;
+
+use Yurly\Test\TestCase;
+use Yurly\Inject\Response\Twig;
+
+class ExampleTest extends TestCase
+{
+
+    public function testRouteWithResponseMock()
+    {
+        $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/');
+
+        $mockResponse = $this->getResponseMock(Twig::class, function($params) {
+            $this->assertEquals($params, ['message' => 'Welcome!']);
+        });
+
+        $this
+            ->callRouteWithMocks([
+                Twig::class => $mockResponse
+            ]);
+    }
+
+}
+```

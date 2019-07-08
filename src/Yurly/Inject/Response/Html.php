@@ -7,6 +7,9 @@ class Html extends ResponseFoundation implements ResponseInterface
 
     protected $contentType = 'text/html';
 
+    /**
+     * Render content in plain 'ol HTML
+     */
     public function render($params = null): void
     {
 

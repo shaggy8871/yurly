@@ -7,9 +7,9 @@ use Yurly\Core\Context;
 class Delete extends RequestFoundation implements RequestInterface
 {
 
-    protected $delete = [];
+    protected $props = [];
 
-    /*
+    /**
      * DELETE values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
@@ -19,47 +19,45 @@ class Delete extends RequestFoundation implements RequestInterface
 
         $this->type = 'Delete';
 
-        parse_str(file_get_contents("php://input"), $this->delete);
-
     }
 
-    /*
-     * Optional method to set the input manually
+    /**
+     * Hydrate the request class
      */
-    public function setProps(array $properties): void
+    public function hydrate(): void
     {
 
-        $this->delete = $properties;
-        
+        parse_str(file_get_contents("php://input"), $this->props);
+
     }
 
-    /*
+    /**
      * Return all properties as an array
      */
     public function toArray(): array
     {
 
-        return $this->delete;
+        return $this->props;
 
     }
 
-    /*
-     * Magic getter method maps requests to the protected $delete property
+    /**
+     * Magic getter method maps requests to the protected $props property
      */
     public function __get(string $property)
     {
 
-        return (isset($this->delete[$property]) ? $this->delete[$property] : null);
+        return (isset($this->props[$property]) ? $this->props[$property] : null);
 
     }
 
-    /*
-     * Magic isset method maps requests to the protected $delete property
+    /**
+     * Magic isset method maps requests to the protected $props property
      */
     public function __isset(string $property): bool
     {
 
-        return isset($this->delete[$property]);
+        return isset($this->props[$property]);
 
     }
 

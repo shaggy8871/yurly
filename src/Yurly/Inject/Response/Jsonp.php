@@ -8,7 +8,7 @@ class Jsonp extends ResponseFoundation implements ResponseInterface
     protected $contentType = 'application/json';
     protected $callback = 'callback';
 
-    /*
+    /**
      * Render content in Jsonp encoded format
      */
     public function render($params = null): void
@@ -25,7 +25,7 @@ class Jsonp extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Set another callback function name if not the default "callback"
      */
     public function setCallback($callback): void

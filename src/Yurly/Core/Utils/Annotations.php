@@ -5,7 +5,7 @@ namespace Yurly\Core\Utils;
 class Annotations
 {
 
-    /*
+    /**
      * Split docblock into annotations
      */
     public static function parseDocBlock($docComments)

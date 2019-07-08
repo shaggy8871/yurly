@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Yurly\Tests;
+namespace Tests;
 
 use Yurly\Core\{Project, Url};
 use Yurly\Core\Interfaces\RouteResolverInterface;

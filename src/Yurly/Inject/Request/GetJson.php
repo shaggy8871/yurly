@@ -7,15 +7,10 @@ use Yurly\Core\Context;
 class GetJson extends Get implements RequestInterface
 {
 
-    /*
-     * GET values are simply stored as object properties - unsanitized!
-     */
-    public function __construct(Context $context)
+    public function hydrate(array $props = []): void
     {
 
-        parent::__construct($context);
-
-        $this->get = json_decode($_SERVER['QUERY_STRING'], true);
+        $this->props = json_decode($this->context->getUrl()->queryString, true) ?? [];
 
     }
 

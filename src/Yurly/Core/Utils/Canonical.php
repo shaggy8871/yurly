@@ -2,12 +2,15 @@
 
 namespace Yurly\Core\Utils;
 
-use Yurly\Core\Exception\{URLParseException, MissingRouteParameterException};
+use Yurly\Core\{Caller, Url};
+use Yurly\Core\Exception\URLParseException;
 
-final class Canonical
+class Canonical
 {
 
-    /*
+    protected static $lastError;
+
+    /**
      * Convert a URL template in format /path/to/:var(/:var2(/:var3)) to a parseable
      * regular expression. Optionally returns the keys.
      */
@@ -19,7 +22,7 @@ final class Canonical
 
         // Remove all characters we don't understand
         if (preg_replace('/[^A-Za-z0-9():_.\/]/', '', $urlTemplate) != $urlTemplate) {
-            throw new URLParseException("Canonical docblock contains unparseable characters." . $urlTemplate);
+            throw new URLParseException("Canonical docblock contains unparseable characters.");
         }
 
         return '/^' . str_replace('/', '\/',
@@ -41,7 +44,7 @@ final class Canonical
 
     }
 
-    /*
+    /**
      * Replaces the parameters into the specified template
      */
     public static function replaceIntoTemplate(string $urlTemplate, ?array $params = []): string
@@ -58,26 +61,42 @@ final class Canonical
 
     }
 
-    /*
-     * Pass in a regular expression and we'll extract variables
+    /**
+     * Pass in a canonical annotation and url and we'll extract variables
      */
-    public static function extract(string $urlTemplate, string $requestUri): ?array
+    public static function extract(Caller $caller, Url $url): array
     {
+
+        $urlTemplate = $caller->annotations['canonical'];
+        $requestUri = $url->requestUri;
+
+        self::$lastError = null;
 
         $regex = static::templateToRegex($urlTemplate, $keys, $requiredKeys);
 
-        if (preg_match($regex, $requestUri, $matches) !== false) {
+        if (preg_match($regex, $requestUri, $matches) !== 0) {
             $values = array_combine($keys,
                 array_pad(array_slice($matches, 1), count($keys), null)
             );
             foreach($values as $key => $value) {
-                if (in_array($key, $requiredKeys) && !$value) {
-                    throw new MissingRouteParameterException(sprintf("Mandatory route parameter '%s' is missing.", $key));
-                }
                 $values[$key] = $value ? urldecode($value) : null;
             }
             return $values;
         }
+
+        self::$lastError = sprintf("Request URI '%s' does not match canonical template for method '%s'.", $requestUri, $caller->method);
+
+        return []; // return empty array
+
+    }
+
+    /**
+     * Return last error
+     */
+    public static function getLastError(): ?string
+    {
+
+        return self::$lastError;
 
     }
 

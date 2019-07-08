@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Site1\Controllers;
+namespace MultiSiteTests\Site2\Controllers;
 
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\Get;
@@ -12,7 +12,7 @@ class Index extends Controller
     public function routeDefault(Get $request, Json $response): array
     {
 
-        return ['result' => 'site1'];
+        return ['result' => 'site2'];
 
     }
 

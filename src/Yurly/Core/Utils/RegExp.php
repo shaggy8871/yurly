@@ -20,7 +20,7 @@ class RegExp
 
     }
 
-    /*
+    /**
      * Does the string value match?
      */
     public function matches(string $value): bool

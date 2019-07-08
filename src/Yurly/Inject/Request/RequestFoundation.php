@@ -8,6 +8,7 @@ use Yurly\Core\Exception\UnknownPropertyException;
 abstract class RequestFoundation
 {
 
+    protected $props = [];
     protected $context;
     protected $type;
     protected $flash;
@@ -18,8 +19,8 @@ abstract class RequestFoundation
         $this->context = $context;
 
         // Attempt to guess the type
-        if (isset($_SERVER['REQUEST_METHOD'])) {
-            $this->type = ucfirst(strtolower($_SERVER['REQUEST_METHOD']));
+        if ($this->context->getUrl()->requestMethod) {
+            $this->type = ucfirst(strtolower($this->context->getUrl()->requestMethod));
         } else {
             $this->type = 'Unknown';
         }
@@ -32,7 +33,17 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
+     * Manually set props
+     */
+    public function setProps(array $props): void
+    {
+
+        $this->props = $props;
+
+    }
+
+    /**
      * Returns the type of request
      */
     public function getType(): string
@@ -42,7 +53,7 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
      * Returns the saved context
      */
     public function getContext(): Context
@@ -52,7 +63,7 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
      * Handy accessor to get the URL straight from the context
      */
     public function getUrl(): Url
@@ -62,7 +73,7 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
      * Look up the saved Flash value if available
      */
     public function getFlash(string $key)
@@ -72,7 +83,7 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
     * Return all public and protected values
     */
     public function __get(string $property)
@@ -89,7 +100,7 @@ abstract class RequestFoundation
 
     }
 
-    /*
+    /**
     * Returns true if the property is set
     */
     public function __isset(string $property): bool

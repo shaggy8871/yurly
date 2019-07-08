@@ -7,11 +7,15 @@
 namespace Yurly\Core;
 
 use Yurly\Core\Exception\{
+    ClassNotFoundException,
     ConfigException,
-    RouteNotFoundException,
-    ClassNotFoundException
+    ReverseRouteLookupException,
+    RouteNotFoundException
 };
 use Yurly\Core\Interfaces\RouteResolverInterface;
+use Yurly\Core\Utils\{Annotations, Canonical};
+use Yurly\Middleware\MiddlewareState;
+use Yurly\Inject\Request\RequestInterface;
 
 class Router
 {
@@ -19,9 +23,11 @@ class Router
     const ROUTE_NOTFOUND = 'routeNotFound';
     const ROUTE_DEFAULT  = 'routeDefault';
 
-    private $project;
-    private $url;
-    private $caller;
+    protected $project;
+    protected $url;
+    protected $caller;
+    protected $mockParameters = [];
+    protected $log = [];
 
     public function __construct(Project $project)
     {
@@ -30,20 +36,13 @@ class Router
 
     }
 
-    /*
+    /**
      * Determine the target controller based on the url path
-     * @todo Add debugging information to see how route is determined
      */
-    public function parseUrl(Url $url = null)
+    public function parseUrl(Url $url): bool
     {
 
-        if ($url) {
-            $this->url = $url; // override existing
-        }
-
-        if (!($this->url instanceof Url)) {
-            throw new ConfigException($this->project, 'No Url instance supplied for parser.');
-        }
+        $this->url = $url;
 
         $pathComponents = $this->url->pathComponents;
 
@@ -51,8 +50,6 @@ class Router
         foreach($pathComponents as &$pathComponent) {
             $pathComponent = str_replace('-', '_', ucfirst($pathComponent));
         }
-
-        $projectControllers = $this->project->ns . '\\Controllers\\';
 
         // Attempt 1: Look for RouteResolver type class in project and instantiate
         $method = 'resolve';
@@ -64,12 +61,14 @@ class Router
             if ($routeResolver instanceof RouteResolverInterface) {
 
                 // Call the resolve() method
-                $route = call_user_func(array($routeResolver, $method), $this->project, $this->url);
+                $route = call_user_func([$routeResolver, $method], $this->project, $this->url);
+
+                $this->log[] = sprintf("[parseUrl] Attempt 1: RouteResolver returned '%s'.", is_callable($route) ? '[Callable]' : $route);
 
                 // If we get a string back in format $controller::$method, look for the method
                 // If the return class method starts with "\" char, look outside the project controller tree
                 if ((is_string($route)) && (strpos($route, '::') !== false)) {
-                    list($controller, $method) = explode('::', ($route[0] != '\\' ? $projectControllers : '') . $route);
+                    list($controller, $method) = explode('::', ($route[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $route);
                     if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
                         return $this->invokeClassMethod(new $controller($this->project), $method);
                     }
@@ -101,6 +100,7 @@ class Router
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
+                    $this->log[] = sprintf("[parseUrl] Attempt 2: Found method %s:%s.", $controller, $method);
                     return $methodFound;
                 }
             }
@@ -115,6 +115,7 @@ class Router
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
+                    $this->log[] = sprintf("[parseUrl] Attempt 3: Found method %s:%s.", $controller, $method);
                     return $methodFound;
                 }
             }
@@ -128,6 +129,7 @@ class Router
         if ($controller) {
             $methodFound = $this->findMethod($controller, $method);
             if ($methodFound) {
+                $this->log[] = sprintf("[parseUrl] Attempt 4: Found method %s:%s.", $controller, $method);
                 return $methodFound;
             }
         }
@@ -137,10 +139,87 @@ class Router
 
     }
 
-    /*
+    /**
+     * Attempt to reverse a route lookup from callback to URL
+     *
+     * @var $callback   Expects a callback, callable, controllerMethod (Index::routeDefault) or method name
+     * @var $params     Optional URL parameters to replace
+     * @var $caller     Optional context if URL is relative to current caller
+     */
+    public function urlFor($callback, ?array $params = [], ?Caller $caller = null): string
+    {
+
+        // Standard array-based callable [$object, $methodName]
+        if (is_array($callback)) {
+            $reflection = new \ReflectionMethod($callback[0], $callback[1]);
+        } else
+        // Static callable - class::methodName
+        if (is_callable($callback)) {
+            $reflection = new \ReflectionMethod($callback);
+        } else
+        // Fallback 1 - try to make it callable by adding a namespace
+        if (strpos($callback, '::') !== false) {
+            $reflection = new \ReflectionMethod(($callback[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $callback);
+        } else
+        // Fallback 2 - if partial string, assume it's a method name in the current controller class
+        if ($caller instanceof Caller) {
+            $reflection = new \ReflectionMethod($caller->controller, $callback);
+        } else {
+            throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable, or route cannot be found.");
+        }
+
+        $doc = $reflection->getDocComment();
+        if ($doc) {
+            $annotations = Annotations::parseDocBlock($doc);
+            if (isset($annotations['canonical'])) {
+                $canonical = $annotations['canonical'];
+            }
+        }
+
+        // If it can't be determined from the DocBlock, try to guess it
+        if (!isset($canonical)) {
+            $className = $reflection->getDeclaringClass()->getShortName();
+            if ($className == 'Index') {
+                $className = '';
+            }
+            $methodName = ltrim($reflection->getName(), 'route');
+            if ($methodName == 'Default') {
+                $methodName = '';
+            }
+            $canonical = str_replace('_', '-',
+                strtolower(($className ? '/' . $className : '') . ($methodName ? '/' . $methodName : '/'))
+            );
+        }
+
+        // Replace in parameters
+        $url = ($this->url instanceof Url ? $this->url->getUrl()->rootUri : '') . Canonical::replaceIntoTemplate($canonical, $params);
+
+        return $url;
+
+    }
+
+    /**
+     * @internal
+     * 
+     * Set mock parameters to replace injected parameters for test purposes
+     */
+    public function setMockParameters(array $params): self
+    {
+
+        $this->mockParameters = [];
+
+        foreach ($params as $k => $param) {
+            $this->mockParameters[$k] = $param;
+        }
+
+        return $this;
+
+    }
+
+    /**
      * When a route cannot be determined, fall back in a controlled sequence
      */
-    private function routeNotFound()
+    protected function routeNotFound(): bool
     {
 
         // @todo: Remove duplicate code above/below
@@ -156,7 +235,11 @@ class Router
         $method = self::ROUTE_NOTFOUND;
         $controller = $this->findController((empty($path) ? 'Index' : $path[0]));
         if (($controller) && (class_exists($controller)) && (is_callable($controller . '::' . $method))) {
-            return (new $controller($this->project))->$method($this->url, $this->project);
+            $routeNotFoundController = new $controller($this->project);
+            $routeNotFoundController->$method($this->url, $this->project);
+            $this->log[] = sprintf("[routeNotFound] Found method %s:%s.", $controller, $method);
+            // Return true to indicate that a method is found
+            return true;
         }
 
         // Finally, fail with an exception that can be trapped and handled
@@ -164,16 +247,16 @@ class Router
 
     }
 
-    /*
+    /**
      * Calls the specified class method and injects parameters
      * @param $class controller class object
      * @param $method string method name
      * @todo Instantiate parameters only once per global session
      */
-    private function invokeClassMethod($class, $method)
+    protected function invokeClassMethod($class, string $method): bool
     {
 
-        if (!is_callable(array($class, $method))) {
+        if (!is_callable([$class, $method])) {
             return $this->routeNotFound();
         }
 
@@ -190,15 +273,15 @@ class Router
         $this->caller = new Caller($class, $method, $annotations);
 
         // Call the method
-        $this->invokeCallable($reflection, $class);
+        return $this->invokeCallable($reflection, $class);
 
     }
 
-    /*
+    /**
      * Calls the specified function or closure and injects parameters
      * @param $function the closure
      */
-    private function invokeFunction($function)
+    protected function invokeFunction($function): bool
     {
 
         if (!is_callable($function)) {
@@ -218,14 +301,14 @@ class Router
         $this->caller = new Caller(null, $function, $annotations);
 
         // Call the function
-        $this->invokeCallable($reflection);
+        return $this->invokeCallable($reflection);
 
     }
 
-    /*
+    /**
      * Calls the method or closure and injects parameters dynamically
      */
-    private function invokeCallable($reflection, $class = null)
+    protected function invokeCallable($reflection, $class = null): bool
     {
 
         $this->beforeCall($reflection, $class);
@@ -238,45 +321,61 @@ class Router
         $defaultResponseClass = null;
         // Loop through parameters to determine their class types
         foreach($params as $param) {
+            // If no class name, ignore it rather than fail
+            if (!$this->getParamClassName($param)) {
+                $inject[] = null;
+                continue;    
+            }
+            // Try to get the class type-hint
             try {
                 $paramClass = $param->getClass();
             } catch (\Exception $e) {
                 // Rethrow the error with further information
                 throw new ClassNotFoundException($param->getName(), ($this->caller->controller ? get_class($this->caller->controller) : null), $this->caller->method);
             }
-            // If it's not a class, inject a null value
+            // Fallback - if it's not a class, inject a null value
             if (!($paramClass instanceof \ReflectionClass)) {
                 $inject[] = null;
                 continue;
             }
-            // Special case for a Url and Project type hints, send in the one we already have
-            if ($paramClass->name == 'Yurly\\Core\\Url') {
-                $inject[] = $this->url;
-            } else
-            if ($paramClass->name == 'Yurly\\Core\\Project') {
-                $inject[] = $this->project;
-            } else
-            if ($paramClass->name == 'Yurly\\Core\\Context') {
-                $inject[] = new Context($this->project, $this->url, $this->caller);
-            } else {
-                if ($this->isRequestClass($paramClass->name, false)) {
-                    $paramInstance = $this->instantiateRequestClass($param, $paramClass);
-                } else {
-                    $paramInstance = new $paramClass->name(
-                        new Context($this->project, $this->url, $this->caller)
-                    );
-                }
-                // If this is a response class, set the default view filename
-                if ($this->isResponseClass($paramInstance)) {
-                    if (($class) && (is_callable(array($paramInstance, 'setDefaults')))) {
-                        $this->setResponseDefaults($paramInstance, $reflection, $class);
+            // Special case for a Url, Project and Context type hints, send in the one we already have
+            switch($paramClass->name) {
+                case 'Yurly\\Core\\Project':
+                    $inject[] = $this->project;
+                    break;
+                case 'Yurly\\Core\\Url':
+                    $inject[] = $this->url;
+                    break;
+                case 'Yurly\\Core\\Context':
+                    $inject[] = new Context($this->project, $this->url, $this->caller);
+                    break;
+                default:
+                    if (isset($this->mockParameters[$paramClass->name])) {
+                        $paramInstance = $this->mockParameters[$paramClass->name];
+                        if ($this->isRequestClass($paramClass->name, false)) {
+                            $paramInstance->hydrate();
+                        }
+                    } else
+                    if ($this->isRequestClass($paramClass->name, false)) {
+                        $paramInstance = $this->instantiateRequestClass($param, $paramClass);
+                        $paramInstance->hydrate();
+                    } else {
+                        $paramInstance = new $paramClass->name(
+                            new Context($this->project, $this->url, $this->caller)
+                        );
                     }
-                    // Set the default response class if one isn't already set
-                    if (!$defaultResponseClass) {
-                        $defaultResponseClass = $paramInstance;
+                    // If this is a response class, set the default view filename
+                    if ($this->isResponseClass($paramInstance)) {
+                        if (($class) && (is_callable([$paramInstance, 'setView']))) {
+                            $this->setResponseDefaults($paramInstance, $reflection, $class);
+                        }
+                        // Set the default response class if one isn't already set
+                        if (!$defaultResponseClass) {
+                            $defaultResponseClass = $paramInstance;
+                        }
                     }
-                }
-                $inject[] = $paramInstance;
+                    $inject[] = $paramInstance;
+                    break;
             }
         }
 
@@ -287,114 +386,67 @@ class Router
             $response = $reflection->invokeArgs($inject);
         }
 
-        $this->afterCall($response);
+        $this->afterCall($response, $class);
 
-        if (($response !== false) && ($response !== null)) {
-            // If object is a Response class, simply call the render method (assume it knows what to do)
-            // Otherwise call the render method on the defined/default response class
-            if ((is_object($response)) && ($this->isResponseClass($response))) {
-                $response->render();
+        // If object is a Response class, simply call the render method (assume it knows what to do)
+        // Otherwise call the render method on the defined/default response class
+        if ((is_object($response)) && ($this->isResponseClass($response))) {
+            $response->render();
+        } else {
+            // If we have a default response class set, use it
+            if ($defaultResponseClass) {
+                $responseClass = $defaultResponseClass;
             } else {
-                // If we have a default response class set, use it
-                if ($defaultResponseClass) {
-                    $responseClass = $defaultResponseClass;
-                } else {
-                    $responseClass = new \Yurly\Inject\Response\Html(
-                        new Context($this->project, $this->url, $this->caller)
-                    );
-                    if (is_callable(array($responseClass, 'setDefaults'))) {
-                        $this->setResponseDefaults($responseClass, $reflection, $class);
-                    }
-                }
-                if (is_callable(array($responseClass, 'render'))) {
-                    $responseClass->render($response);
+                $responseClass = new \Yurly\Inject\Response\Html(
+                    new Context($this->project, $this->url, $this->caller)
+                );
+                if (is_callable([$responseClass, 'setView'])) {
+                    $this->setResponseDefaults($responseClass, $reflection, $class);
                 }
             }
+            if (is_callable([$responseClass, 'render'])) {
+                $responseClass->render($response);
+            }
         }
+
+        // Return true to indicate success
+        return true;
 
     }
 
     /**
      * Allows a @before annotation to determine a different route
      */
-    private function beforeCall(&$reflection, &$class)
+    protected function beforeCall(&$reflection, &$class = null): void
     {
 
-        if (!isset($this->caller->annotations['before'])) {
-            return; // proceed
+        $beforeHandlers = [];
+
+        if ($class && method_exists($class, 'beforeAllRoutes')) {
+            $beforeHandlers[] = 'beforeAllRoutes';
         }
-
-        $route = $this->caller->annotations['before'];
-        $projectControllers = $this->project->ns . '\\Controllers\\';
-        $beforeClass = null;
-        $beforeReflection = null;
-
-        // If we get a string back in format $controller::$method, look for the method
-        // If the return class method starts with "\" char, look outside the project controller tree
-        if ((is_string($route)) && (strpos($route, '::') !== false)) {
-            list($controller, $method) = explode('::', ($route[0] != '\\' ? $projectControllers : '') . $route);
-            if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
-                $beforeClass = new $controller($this->project);
-                $beforeReflection = new \ReflectionMethod($beforeClass, $method);
-            }
-        } else
-        // If we get a method name back, look in the same class
-        if ((is_string($route)) && (method_exists($class, $route))) {
-            $beforeClass = $class;
-            $beforeReflection = new \ReflectionMethod($class, $route);
-        } else
-        // Otherwise if it's callable, it must be a function
-        if (is_callable($route)) {
-            $beforeClass = $class;
-            $beforeReflection = new \ReflectionFunction($route);
-        }
-
-        if (!($beforeReflection instanceof \ReflectionFunctionAbstract)) {
-            return; // ignore; @todo: log reason
-        }
-
-        // Get an array of ReflectionParameter objects
-        $params = $beforeReflection->getParameters();
-        // Injection array
-        $inject = [];
-        // Loop through parameters to determine their class types
-        foreach($params as $param) {
-            try {
-                $paramClass = $param->getClass();
-            } catch (\Exception $e) {
-                // Rethrow the error with further information
-                throw new ClassNotFoundException($param->getName(), ($this->caller->controller ? get_class($this->caller->controller) : null), $this->caller->method);
-            }
-            // If it's not a class, inject a null value
-            if (!($paramClass instanceof \ReflectionClass)) {
-                $inject[] = null;
-                continue;
-            }
-            // Special case for a Url and Project type hints, send in the one we already have
-            if ($paramClass->name == 'Yurly\\Core\\Url') {
-                $inject[] = $this->url;
-            } else
-            if ($paramClass->name == 'Yurly\\Core\\Project') {
-                $inject[] = $this->project;
-            } else
-            if ($paramClass->name == 'Yurly\\Core\\Context') {
-                $inject[] = new Context($this->project, $this->url, $this->caller);
-            } else {
-                $inject[] = null;
+        if (isset($this->caller->annotations['before'])) {
+            $annotations = preg_split('/[ ,;]+/', $this->caller->annotations['before']);
+            foreach($annotations as $annotation) {
+                $beforeHandlers[] = $annotation;
             }
         }
 
-        // Send the injected parameters into the identified method
-        if ($beforeReflection instanceof \ReflectionMethod) {
-            $response = $beforeReflection->invokeArgs($beforeClass, $inject);
-        } else {
-            $response = $beforeReflection->invokeArgs($inject);
+        // Instantiate state handler
+        $state = new MiddlewareState();
+
+        foreach($beforeHandlers as $beforeHandler) {
+            if (!$state->hasStopped()) {
+                $this->invokeMiddleware($beforeHandler, $class, $state);
+            }
         }
+
+        $response = $state->getLastResponse();
 
         // If we get a string back in format $controller::$method, look for the method
         // If the return class method starts with "\" char, look outside the project controller tree
         if ((is_string($response)) && (strpos($response, '::') !== false)) {
-            list($controller, $method) = explode('::', ($response[0] != '\\' ? $projectControllers : '') . $response);
+            list($controller, $method) = explode('::', ($response[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $response);
             if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
                 // Override parameters:
                 $class = new $controller($this->project);
@@ -418,39 +470,153 @@ class Router
 
     }
 
-    /*
-     * @todo
+    /**
+     * Allows an @after annotation to return a different response
      */
-    private function afterCall(&$response)
+    protected function afterCall(&$response, &$class = null): void
     {
+
+        $afterHandlers = [];
+
+        if ($class && method_exists($class, 'afterAllRoutes')) {
+            $afterHandlers[] = 'afterAllRoutes';
+        }
+        if (isset($this->caller->annotations['after'])) {
+            $annotations = preg_split('/[ ,;]+/', $this->caller->annotations['after']);
+            foreach($annotations as $annotation) {
+                $afterHandlers[] = $annotation;
+            }
+        }
+
+        // Instantiate state handler
+        $state = new MiddlewareState();
+
+        foreach($afterHandlers as $afterHandler) {
+            if (!$state->hasStopped()) {
+                $this->invokeMiddleware($afterHandler, $class, $state);
+            }
+        }
+
+        $stateLastResponse = $state->getLastResponse();
+
+        // We only overwrite if the response is non-null
+        if ($stateLastResponse !== null) {
+            $response = $stateLastResponse;
+        }
+
     }
 
-    /*
+    /**
+     * Calls each middleware handler method in turn, and updates $state where appropriate
+     */
+    protected function invokeMiddleware(string $handlerMethod, $class, MiddlewareState $state): void
+    {
+
+        $middlewareClass = null;
+        $middlewareReflection = null;
+
+        // If handler contains a string in format $controller::$method, look for the method
+        // If the return class method starts with "\" char, look outside the project controller tree
+        if ((is_string($handlerMethod)) && (strpos($handlerMethod, '::') !== false)) {
+            list($controller, $method) = explode('::', ($handlerMethod[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $handlerMethod);
+            if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
+                $middlewareClass = new $controller($this->project);
+                $middlewareReflection = new \ReflectionMethod($middlewareClass, $method);
+            }
+        } else
+        // If we get a method name back, look in the same class
+        if ((is_string($handlerMethod)) && (method_exists($class, $handlerMethod))) {
+            $middlewareClass = $class;
+            $middlewareReflection = new \ReflectionMethod($class, $handlerMethod);
+        } else
+        // Otherwise if it's callable, it must be a function
+        if (is_callable($handlerMethod)) {
+            $middlewareClass = $class;
+            $middlewareReflection = new \ReflectionFunction($handlerMethod);
+        }
+
+        if (!($middlewareReflection instanceof \ReflectionFunctionAbstract)) {
+            $this->log[] = sprintf("Middleware handler '%s' not found, or is not a valid method.", $handlerMethod);
+            return;
+        }
+
+        // Get an array of ReflectionParameter objects
+        $params = $middlewareReflection->getParameters();
+        // Injection array
+        $inject = [];
+        // Loop through parameters to determine their class types
+        foreach($params as $param) {
+            try {
+                $paramClass = $param->getClass();
+            } catch (\Exception $e) {
+                // Rethrow the error with further information
+                throw new ClassNotFoundException($param->getName(), ($this->caller->controller ? get_class($this->caller->controller) : null), $this->caller->method);
+            }
+            // If it's not a class, inject a null value
+            if (!($paramClass instanceof \ReflectionClass)) {
+                $inject[] = null;
+                continue;
+            }
+            // Special case for known classes, send in the one we already have
+            switch($paramClass->name) {
+                case 'Yurly\\Core\\Project':
+                    $inject[] = $this->project;
+                    break;
+                case 'Yurly\\Core\\Url':
+                    $inject[] = $this->url;
+                    break;
+                case 'Yurly\\Core\\Context':
+                    $inject[] = new Context($this->project, $this->url, $this->caller);
+                    break;
+                case 'Yurly\\Middleware\\MiddlewareState':
+                    $inject[] = $state;
+                    break;
+                default:
+                    $inject[] = null;
+                    break;
+            }
+        }
+
+        // Send the injected parameters into the identified method
+        if ($middlewareReflection instanceof \ReflectionMethod) {
+            $response = $middlewareReflection->invokeArgs($middlewareClass, $inject);
+        } else {
+            $response = $middlewareReflection->invokeArgs($inject);
+        }
+
+        // Overwrite last response if something new returned; the rest of $state should be preserved
+        if (is_string($response) || is_callable($response)) {
+            $state->setLastResponse($response);
+        }
+
+    }
+
+    /**
      * Returns true if it's a Request class
      */
-    private function isRequestClass($class, $autoload = true)
+    protected function isRequestClass($class, bool $autoload = true): bool
     {
 
         return in_array('Yurly\\Inject\\Request\\RequestInterface', class_implements($class, $autoload));
 
     }
 
-    /*
+    /**
      * Returns true if it's a Response class
      */
-    private function isResponseClass($class, $autoload = true)
+    protected function isResponseClass($class, bool $autoload = true): bool
     {
 
         return in_array('Yurly\\Inject\\Response\\ResponseInterface', class_implements($class, $autoload));
 
     }
 
-    /*
+    /**
      * Special case for request parameters
      * If the parameter class contains a static createFromRequest method,
      * ask it to instantiate the class for us using the request data supplied.
      */
-    private function instantiateRequestClass($param, $paramClass)
+    protected function instantiateRequestClass(\ReflectionParameter $param, \ReflectionClass $paramClass): ?RequestInterface
     {
 
         try {
@@ -490,10 +656,10 @@ class Router
 
     }
 
-    /*
+    /**
      * Copied and modified from http://php.net/manual/en/reflectionparameter.getclass.php#108620
      */
-    private function getParamClassName(\ReflectionParameter $param)
+    protected function getParamClassName(\ReflectionParameter $param): ?string
     {
 
         preg_match('/\[\s\<\w+?>\s([\w\\\\]+)/s', $param->__toString(), $matches);
@@ -501,18 +667,18 @@ class Router
 
     }
 
-    /*
+    /**
      * Inject details into the response class. Not available for closures.
      */
-    private function setResponseDefaults($responseClass, $reflection, $controllerClass = null)
+    protected function setResponseDefaults($responseClass, $reflection, $controllerClass = null): void
     {
 
-        if (!is_callable(array($responseClass, 'setDefaults'))) {
-            return false;
+        if (!is_callable([$responseClass, 'setView'])) {
+            return;
         }
         // Not available if it's a closure since we have no context
         if ($reflection->isClosure()) {
-            return false;
+            return;
         }
 
         // Try to auto-detect details using controller
@@ -523,16 +689,19 @@ class Router
             // Inject view filename
             $methodName = $reflection->getName();
             if (substr($methodName, 0, strlen('route')) == 'route') {
-                $responseClass->setViewFilename($controllerPath['filename'] . '/' . strtolower(str_replace('route', '', $methodName)));
+                $responseClass->setView([
+                    'filename' => $controllerPath['filename'] . '/' . strtolower(str_replace('route', '', $methodName)),
+                    'dir' => str_replace('/Controllers', '/Views', $controllerPath['dirname']),
+                ]);
             }
         }
 
     }
 
-    /*
+    /**
      * Find a controller that matches the name specified
      */
-    private function findController($controller): ?string
+    protected function findController($controller): ?string
     {
 
         if (!$controller) {
@@ -549,33 +718,29 @@ class Router
 
     }
 
-    /*
+    /**
      * Attempt to find the appropriate method to call
      */
-    private function findMethod($controller, $method)
+    protected function findMethod($controller, string $method): bool
     {
 
         if (method_exists($controller, $method)) {
-            $this->invokeClassMethod(new $controller($this->project), $method);
-            // Return true to indicate that a method is found
-            return true;
+            return $this->invokeClassMethod(new $controller($this->project), $method);
         }
 
         $methodMatch = $this->scanForMethodMatches($controller);
         if ($methodMatch) {
-            $this->invokeClassMethod(new $controller($this->project), $methodMatch);
-            // Return true to indicate that a method is found
-            return true;
+            return $this->invokeClassMethod(new $controller($this->project), $methodMatch);
         }
 
         return false;
 
     }
 
-    /*
+    /**
      * Find a matching method using annotation matching
      */
-    private function scanForMethodMatches($controller)
+    protected function scanForMethodMatches($controller): ?string
     {
 
         $controllerClassReflection = new \ReflectionClass($controller);
@@ -593,47 +758,47 @@ class Router
             }
         }
 
-    }
-
-    /*
-     * Creates a namespace alias only if it doesn't already exist
-     */
-    private function createAlias($from, $to)
-    {
-
-        if ((class_exists($from)) && (!class_exists($to))) {
-            class_alias($from, $to);
-        }
+        return null;
 
     }
 
-    /*
+    /**
      * Return the project
      */
-    public function getProject()
+    public function getProject(): Project
     {
 
         return $this->project;
 
     }
 
-    /*
+    /**
      * Return the parsed url class that we're using
      */
-    public function getUrl()
+    public function getUrl(): Url
     {
 
         return $this->url;
 
     }
 
-    /*
+    /**
      * Return the caller information
      */
-    public function getCaller()
+    public function getCaller(): Caller
     {
 
         return $this->caller;
+
+    }
+
+    /**
+     * Return the route log for debugging purposes
+     */
+    public function getLog(): array
+    {
+
+        return $this->log;
 
     }
 

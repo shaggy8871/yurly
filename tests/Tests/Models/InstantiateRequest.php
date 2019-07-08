@@ -1,6 +1,6 @@
 <?php
 
-namespace Yurly\Tests\Models;
+namespace Tests\Models;
 
 use Yurly\Inject\Request\Request;
 

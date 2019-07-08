@@ -5,6 +5,9 @@ namespace Yurly\Core;
 class Project
 {
 
+    const DEBUG_ON  = true;
+    const DEBUG_OFF = false;
+
     protected $hosts;
     protected $ns;
     protected $debugMode;
@@ -12,7 +15,7 @@ class Project
     protected $config;
     protected $services;
 
-    public function __construct($hosts, string $ns, string $path = '', bool $debugMode = false)
+    public function __construct($hosts, string $ns, string $path = '', bool $debugMode = self::DEBUG_OFF)
     {
 
         $configClass = $ns . '\\Config';
@@ -26,7 +29,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to saved project hosts
      */
     public function getHosts()
@@ -36,7 +39,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to saved project namespace
      */
     public function getNamespace(): string
@@ -46,7 +49,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to saved path
      */
     public function getPath(): string
@@ -56,7 +59,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to saved debug mode value
      */
     public function getDebugMode(): bool
@@ -66,7 +69,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to saved config class
      */
     public function getConfig()
@@ -76,7 +79,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Returns the public service container
      */
     public function getService(string $name): ?\stdClass
@@ -86,7 +89,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Handy accessor to update debug mode value
      */
     public function setDebugMode(bool $debugMode): void
@@ -96,7 +99,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Add a public service to the project
      */
     public function addService(string $name, \stdClass $object): void
@@ -106,7 +109,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Magic getter method maps requests to some protected properties
      */
     public function __get(string $property)
@@ -117,7 +120,7 @@ class Project
 
     }
 
-    /*
+    /**
      * Returns true if some protected properties exist
      */
     public function __isset(string $property): bool

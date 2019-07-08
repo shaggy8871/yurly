@@ -7,9 +7,9 @@ use Yurly\Core\Context;
 class Get extends RequestFoundation implements RequestInterface
 {
 
-    protected $get = [];
+    protected $props = [];
 
-    /*
+    /**
      * GET values are simply stored as object properties - unsanitized!
      */
     public function __construct(Context $context)
@@ -18,37 +18,46 @@ class Get extends RequestFoundation implements RequestInterface
         parent::__construct($context);
 
         $this->type = 'Get';
-        $this->get = $_GET;
 
     }
 
-    /*
+    /**
+     * Hydrate the request class
+     */
+    public function hydrate(): void
+    {
+
+        $this->props = $_GET;
+
+    }
+
+    /**
      * Return all properties as an array
      */
     public function toArray(): array
     {
 
-        return $this->get;
+        return $this->props;
 
     }
 
-    /*
+    /**
      * Magic getter method maps requests to the protected $get property
      */
     public function __get(string $property)
     {
 
-        return (isset($this->get[$property]) ? $this->get[$property] : null);
+        return (isset($this->props[$property]) ? $this->props[$property] : null);
 
     }
 
-    /*
+    /**
      * Magic isset method maps requests to the protected $get property
      */
     public function __isset(string $property): bool
     {
 
-        return isset($this->get[$property]);
+        return isset($this->props[$property]);
 
     }
 

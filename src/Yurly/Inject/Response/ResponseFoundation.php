@@ -2,9 +2,9 @@
 
 namespace Yurly\Inject\Response;
 
-use Yurly\Core\Context;
+use Yurly\Core\{Context, Router};
 use Yurly\Core\Utils\{Annotations, Canonical};
-use Yurly\Inject\Response\Exception\{ReverseRouteLookupException, ResponseConfigException};
+use Yurly\Inject\Response\Exception\ResponseConfigException;
 
 abstract class ResponseFoundation
 {
@@ -28,7 +28,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set defaults for the response class post instantiation
      */
     public function setDefaults(array $defaults): void
@@ -47,9 +47,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Change the view filename and base directory
-    */
+    /**
+     * Change the view filename and base directory
+     */
     public function setView(array $view): ResponseInterface
     {
 
@@ -64,9 +64,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Change the view base directory
-    */
+    /**
+     * Change the view base directory
+     */
     public function setViewDir(string $dir): ResponseInterface
     {
 
@@ -76,7 +76,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Change the view filename and path
      */
     public function setViewFilename(string $filename): ResponseInterface
@@ -88,7 +88,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set the view parameters prior to rendering
      */
     public function setViewParams($params = null): ResponseInterface
@@ -100,7 +100,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Set the response status code
      */
     public function setStatusCode(int $statusCode): ResponseInterface
@@ -112,9 +112,9 @@ abstract class ResponseFoundation
 
     }
 
-    /*
-    * Set the content type to something other than the default
-    */
+    /**
+     * Set the content type to something other than the default
+     */
     public function setContentType(string $contentType): ResponseInterface
     {
 
@@ -124,7 +124,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Sends a Flash message that disappears on the next page view
      */
     public function flash(string $key, $message): void
@@ -152,7 +152,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Redirect to the specified URL
      */
     public function redirect(string $url, int $statusCode = 302): void
@@ -163,7 +163,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Looks up the canonical URL for a method if it's available via DocBlock
      * The $method parameter should be of type callable, which is a string of format
      * class::methodName or an array of [class, methodName]
@@ -171,60 +171,11 @@ abstract class ResponseFoundation
     public function urlFor($callback, ?array $params = null): string
     {
 
-        try {
-            // Standard array-based callable [$object, $methodName]
-            if (is_array($callback)) {
-                $reflection = new \ReflectionMethod($callback[0], $callback[1]);
-            } else
-            // Static callable - class::methodName
-            if (is_callable($callback)) {
-                $reflection = new \ReflectionMethod($callback);
-            } else
-            // Fallback 1 - try to make it callable by adding a namespace
-            if (strpos($callback, '::') !== false) {
-                $reflection = new \ReflectionMethod($this->context->getProject()->ns . '\\Controllers\\' . $callback);
-            } else
-            // Fallback 2 - if partial string, assume it's a method name in the current controller class
-            if ($this->context->getCaller()->controller) {
-                $reflection = new \ReflectionMethod($this->context->getCaller()->controller, $callback);
-            } else {
-                throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable");
-            }
-        } catch (\ReflectionException $e) {
-            throw new ReverseRouteLookupException("Parameter passed to the urlFor method is not callable");
-        }
-
-        $doc = $reflection->getDocComment();
-        if ($doc) {
-            $annotations = Annotations::parseDocBlock($doc);
-            if (isset($annotations['canonical'])) {
-                $canonical = $annotations['canonical'];
-            }
-        }
-
-        // If it can't be determined from the DocBlock, try to guess it
-        if (!isset($canonical)) {
-            $className = $reflection->getDeclaringClass()->getShortName();
-            if ($className == 'Index') {
-                $className = '';
-            }
-            $methodName = ltrim($reflection->getName(), 'route');
-            if ($methodName == 'Default') {
-                $methodName = '';
-            }
-            $canonical = str_replace('_', '-',
-                strtolower(($className ? '/' . $className : '') . ($methodName ? '/' . $methodName : '/'))
-            );
-        }
-
-        // Replace in parameters
-        $canonical = $this->context->getUrl()->rootUri . Canonical::replaceIntoTemplate($canonical, $params);
-
-        return $canonical;
+        return (new Router($this->context->getProject()))->urlFor($callback, $params, $this->context->getCaller());
 
     }
 
-    /*
+    /**
      * Handy method that combines redirect and urlFor
      */
     public function redirectToUrl($callback, ?array $params = null): void
@@ -234,7 +185,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Returns the saved context
      */
     public function getContext(): Context
@@ -244,7 +195,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * Return all public and protected values
      */
     public function __get(string $property)
@@ -261,7 +212,7 @@ abstract class ResponseFoundation
 
     }
 
-    /*
+    /**
      * If the response class itself is output, call the render method automatically
      */
     public function __toString()

@@ -9,16 +9,17 @@ class Request extends RequestFoundation implements RequestInterface
     const TYPE_POST = 'Post';
     const TYPE_PUT = 'Put';
     const TYPE_DELETE = 'Delete';
-    const TYPE_OPTIONS = 'Options';
     const TYPE_PATCH = 'Patch';
+    const TYPE_ROUTE_PARAMS = 'RouteParams';
 
     protected $get;
     protected $post;
     protected $put;
-    protected $args;
+    protected $delete;
+    protected $patch;
     protected $routeParams;
 
-    /*
+    /**
      * Returns a GET request object
      */
     public function get(): Get
@@ -26,13 +27,14 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->get) {
             $this->get = new Get($this->context);
+            $this->get->hydrate();
         }
 
         return $this->get;
 
     }
 
-    /*
+    /**
      * Returns a POST request object
      */
     public function post(): Post
@@ -40,13 +42,14 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->post) {
             $this->post = new Post($this->context);
+            $this->post->hydrate();
         }
 
         return $this->post;
 
     }
 
-    /*
+    /**
      * Returns a PUT request object
      */
     public function put(): Put
@@ -54,13 +57,44 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->put) {
             $this->put = new Put($this->context);
+            $this->put->hydrate();
         }
 
         return $this->put;
 
     }
 
-    /*
+    /**
+     * Returns a DELETE request object
+     */
+    public function delete(): Delete
+    {
+
+        if (!$this->delete) {
+            $this->delete = new Delete($this->context);
+            $this->delete->hydrate();
+        }
+
+        return $this->delete;
+
+    }
+
+    /**
+     * Returns a PATCH request object
+     */
+    public function patch(): Patch
+    {
+
+        if (!$this->patch) {
+            $this->patch = new Patch($this->context);
+            $this->patch->hydrate();
+        }
+
+        return $this->patch;
+
+    }
+
+    /**
      * Returns route parameters
      */
     public function routeParams(): RouteParams
@@ -68,6 +102,7 @@ class Request extends RequestFoundation implements RequestInterface
 
         if (!$this->routeParams) {
             $this->routeParams = new RouteParams($this->context);
+            $this->routeParams->hydrate();
         }
 
         return $this->routeParams;
@@ -115,16 +150,6 @@ class Request extends RequestFoundation implements RequestInterface
     }
 
     /**
-     * @return boolean if this request is a OPTIONS
-     */
-    public function isOptions(): bool
-    {
-
-        return $this->type == self::TYPE_OPTIONS;
-
-    }
-
-    /**
      * @return boolean if this request is a PATCH
      */
     public function isPatch(): bool
@@ -134,7 +159,25 @@ class Request extends RequestFoundation implements RequestInterface
 
     }
 
-    /*
+    /**
+     * @return boolean if this request is a RouteParams
+     */
+    public function isRouteParams(): bool
+    {
+
+        return $this->type == self::TYPE_ROUTE_PARAMS;
+
+    }
+
+    /**
+     * To meet contract requirements
+     */
+    public function hydrate(): void
+    {
+
+    }
+
+    /**
      * To meet contract requirements
      */
     public function toArray(): array

@@ -36,7 +36,7 @@ class Csv extends ResponseFoundation implements ResponseInterface
 
     }
 
-    /*
+    /**
      * Set the filename to force the browser to download the CSV
      */
     public function setDownloadFilename(string $filename): void
