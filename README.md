@@ -306,7 +306,6 @@ class UserFinder extends RouteParams
 
     public function hydrate(): void
     {
-
         // Be sure to hydrate the parent first to set default values
         parent::hydrate();
 
@@ -314,7 +313,6 @@ class UserFinder extends RouteParams
         if (isset($this->props['id'])) {
             $this->user = User::findById($this->props['id']);
         }
-
     }
 
     public function getUser(): ?User
@@ -377,9 +375,7 @@ class User extends Controller
      */
     public function routeDefault(UserFinder $user, UserJsonDataMapper $response): ?UserModel
     {
-
         return $user->getUser();
-
     }
 
 }
@@ -596,14 +592,16 @@ class ExampleTest extends TestCase
 
     public function testRouteWithRequestMock()
     {
+        $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/');
+
         $mockRequest = $this->getRequestMock(Get::class, function($self) {
             $self->setProps(['hello' => 'World']);
         });
 
         $response = $this
-            ->setProjectNamespace('Myapp')
-            ->setProjectPath('./src')
-            ->setUrl('/')
             ->getRouteResponse([
                 Get::class => $mockRequest
             ]);
@@ -631,14 +629,16 @@ class ExampleTest extends TestCase
 
     public function testRouteWithResponseMock()
     {
+        $this
+            ->setProjectNamespace('Myapp')
+            ->setProjectPath('./src')
+            ->setUrl('/');
+
         $mockResponse = $this->getResponseMock(Twig::class, function($params) {
             $this->assertEquals($params, ['message' => 'Welcome!']);
         });
 
         $this
-            ->setProjectNamespace('Myapp')
-            ->setProjectPath('./src')
-            ->setUrl('/')
             ->callRouteWithMocks([
                 Twig::class => $mockResponse
             ]);

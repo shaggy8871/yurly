@@ -145,7 +145,7 @@ switch ($argv[1]) {
 
     case 'test':
         echo "\n";
-        echo "Which project do you want to add a test class to?\n";
+        echo "Which project do you want to add a test controller class to?\n";
         $projectClasses = array_values($autoloadDevClasses);
         foreach($projectClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
@@ -160,11 +160,6 @@ switch ($argv[1]) {
             exit(1);
         }
         $project = rtrim($projectClasses[$project - 1], '/');
-        echo $project . "\n";
-        if (!file_exists($project)) {
-            echo sprintf("  ❌  A project directory called '%s' does not exist. Please create it first.\n\n", $project);
-            exit(1);
-        }
         $test = readline("\nName of test class (or blank to cancel): ");
         if (!$test) {
             echo "\n";
