@@ -363,7 +363,7 @@ class TestCase extends PhpUnitTestCase
      * 
      * @dependentMethod     getContext()
      */
-    protected function getRequestMock(string $class, callable $callback): RequestInterface
+    protected function getRequestMock(string $class, ?callable $callback = null): RequestInterface
     {
 
         $requestMock = $this->getMockBuilder($class)
@@ -374,7 +374,11 @@ class TestCase extends PhpUnitTestCase
         $requestMock
             ->expects($this->once())
             ->method('hydrate')
-            ->will($this->returnCallback(function() use ($callback, $requestMock) { $callback($requestMock); }));
+            ->will($this->returnCallback(function() use ($callback, $requestMock) {
+                if (is_callable($callback)) {
+                    $callback($requestMock);
+                }
+            }));
 
         return $requestMock;
 
@@ -388,18 +392,30 @@ class TestCase extends PhpUnitTestCase
      * 
      * @dependentMethod     getContext()
      */
-    protected function getResponseMock(string $class, callable $callback): ResponseInterface
+    protected function getResponseMock(string $class, ?callable $callback = null): ResponseInterface
     {
 
         $responseMock = $this->getMockBuilder($class)
             ->setConstructorArgs([$this->getContext()])
-            ->setMethods(['render'])
+            ->setMethods(['render', 'redirect'])
             ->getMock();
 
         $responseMock
             ->expects($this->once())
             ->method('render')
-            ->will($this->returnCallback(function($params) use ($callback) { $callback($params); }));
+            ->will($this->returnCallback(function($params) use ($callback) {
+                if (is_callable($callback)) {
+                    $callback($params);
+                }
+            }));
+        $responseMock
+            ->method('redirect')
+            ->will($this->returnCallback(function(string $url, int $statusCode = 302) use ($responseMock) {
+                $responseMock->redirect = (object) [
+                    'url' => $url,
+                    'statusCode' => $statusCode
+                ];
+            }));
 
         return $responseMock;
 
