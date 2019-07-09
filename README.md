@@ -190,10 +190,23 @@ class Example extends Controller
 
 ## Middleware
 
-You can have Yurly call a method before each route to check if it should proceed. The `@before` docblock can be used to control or restrict the flow as needed.
+Yurly exposes options for middleware code to run before and after a route is called.
 
-Return an alternative route in the format `Controller::method` to have it render content from another controller/route method.
+### @before
 
+For each route, adding a `@before` docblock above the method declaration will run the designated methods before calling the route. This may, for instance, be used to point the user to an alternative route, or to look up additional metadata before the route code runs. Middleware may be specified as either the name of the controller method to call, or if outside the controller, in the form `Controller::method`. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
+
+To alter the route that gets rendered, middleware should return an alternative route as a string in the form `Controller::routeMethod`.
+
+To run code before all routes in a controller are called, add a `beforeAllRoutes()` method to the controller. This will be run _before_ all `@before` docblock methods are called.
+
+### @after
+
+The `@after` docblock will call the designated class methods after the route has run. Each middleware method will receive a copy of the response, and may alter it before it renders to the browser. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
+
+To run middleware after all routes in a controller are called, add an `afterAllRoutes()` method to the controller. This code will be run _before_ all `@after` docblock methods are called.
+
+src/Myapp/Middleware/Auth.php:
 ```php
 <?php
 
@@ -227,6 +240,7 @@ trait Auth
 
 }
 ```
+src/Myapp/Controllers/Admin.php:
 ```php
 <?php
 
@@ -631,6 +645,8 @@ class ExampleTest extends TestCase
             ->callRouteWithMocks([
                 Twig::class => $mockResponse
             ]);
+
+        $this->assertEquals($mockResponse->statusCode, 200);
     }
 
 }
