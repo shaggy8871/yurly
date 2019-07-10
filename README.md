@@ -217,7 +217,7 @@ use Yurly\Core\{Url, Context};
 trait Auth
 {
 
-    public function isLoggedIn(Url $url, Context $context)
+    public function isLoggedIn(Url $url, Context $context): ?string
     {
         $caller = $context->getCaller();
         $annotations = $caller->getAnnotations();
@@ -231,6 +231,7 @@ trait Auth
         if (!$this->authenticate($roles)) {
             return 'User::routeLogout';
         }
+        return null;
     }
 
     private function authenticate(array $roles): bool
@@ -268,7 +269,66 @@ class Admin extends Controller
     }
 
 }
+```
 
+### MiddlewareState
+
+Middleware methods are able to use a class called `MiddlewareState` to check the response from the previous middleware method, and to stop the router from calling subsequent middleware methods if need be.
+
+> Calling `stop()` does not prevent the route from being called. It only prevents subsequent middleware methods from being called.
+
+src/Myapp/Controllers/Admin.php:
+```php
+<?php
+
+namespace Myapp\Controllers;
+
+use Yurly\Core\Controller;
+use Yurly\Inject\Response\Twig;
+use Yurly\Middleware\MiddlewareState;
+use Myapp\Models\User;
+use Myapp\Models\AdminPermissions;
+
+class Admin extends Controller
+{
+
+    private $user;
+    private $permissions;
+
+    /**
+     * @before isLoggedIn, hasPermission
+     */
+    public function routeDefault(Twig $response): array
+    {
+        return [
+            'user' => $this->user,
+            'permissions' => $this->permissions,
+        ];
+    }
+
+    public function isLoggedIn(MiddlewareState $state): ?string
+    {
+        $this->user = User::getLoggedIn();
+        if (!($this->user instanceof User)) {
+            // Don't call hasPermission, go straight to login route
+            $state->stop();
+            return 'User::routeLogin';
+        }
+        return null;
+    }
+
+    public function hasPermission(MiddlewareState $state): ?string
+    {
+        $this->permissions = AdminPermissions::getPermissions($this->user);
+        if (empty($this->permissions)) {
+            // Go to access denied route
+            $state->stop();
+            return 'User::routeAccessDenied';
+        }
+        return null;
+    }
+
+}
 ```
 
 ## Custom Request/Response Classes
