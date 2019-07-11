@@ -444,6 +444,54 @@ class User extends Controller
 }
 ```
 
+## Dependency Injected Parameters
+
+Yurly does not include native support for dependency injection outside of Request and Response classes, but it's easy enough to add a PSR-11 compatible DI solution through composer. Here's an example using [https://github.com/PHP-DI/PHP-DI]:
+
+composer.json
+```
+composer require php-di/php-di
+```
+src/Myapp/Config.php:
+```php
+<?php
+
+namespace Myapp;
+
+use Yurly\Core\Project;
+use DI\Container;
+
+class Config
+{
+
+    public function __construct(Project $project)
+    {
+        $container = new Container();
+        $project->addContainer($container);
+    }
+
+}
+```
+src/Myapp/Controllers/Index.php:
+```php
+class Index extends Controller
+{
+    /**
+     * Yurly\Core\Project must always be the first parameter
+     */
+    public function __construct(Project $project, \Myapp\Models\User $user)
+    {
+        // $user is instantiated and ready
+        parent::__construct($project);
+    }
+
+    public function routeWithDI(\Myapp\Models\User $user)
+    {
+        // $user is instantiated and ready
+    }
+}
+```
+
 ## Custom Route Resolvers
 
 If you have routes that don't follow the controller/method approach, it's easy to create a custom route resolver class that can handle custom routing.

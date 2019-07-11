@@ -2,6 +2,8 @@
 
 namespace Yurly\Core;
 
+use Psr\Container\ContainerInterface;
+
 class Project
 {
 
@@ -13,6 +15,7 @@ class Project
     protected $debugMode;
     protected $path;
     protected $config;
+    protected $container;
 
     public function __construct($hosts, string $ns, string $path = '', bool $debugMode = self::DEBUG_OFF)
     {
@@ -89,12 +92,22 @@ class Project
     }
 
     /**
+     * Method to add a PSR-11 compatible DI container
+     */
+    public function addContainer(ContainerInterface $container): void
+    {
+
+        $this->container = $container;
+
+    }
+
+    /**
      * Magic getter method maps requests to some protected properties
      */
     public function __get(string $property)
     {
 
-        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config', 'container']) ?
             $this->$property : null);
 
     }
@@ -105,7 +118,7 @@ class Project
     public function __isset(string $property): bool
     {
 
-        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config', 'container']) ?
             property_exists($this, $property) : false);
 
     }

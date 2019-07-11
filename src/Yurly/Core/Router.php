@@ -16,6 +16,7 @@ use Yurly\Core\Interfaces\RouteResolverInterface;
 use Yurly\Core\Utils\{Annotations, Canonical};
 use Yurly\Middleware\MiddlewareState;
 use Yurly\Inject\Request\RequestInterface;
+use Psr\Container\ContainerInterface;
 
 class Router
 {
@@ -56,7 +57,7 @@ class Router
         $controller = $this->project->ns . '\\RouteResolver';
         if (class_exists($controller)) {
 
-            $routeResolver = new $controller($this->project);
+            $routeResolver = $this->invokeController($controller);
 
             if ($routeResolver instanceof RouteResolverInterface) {
 
@@ -70,7 +71,7 @@ class Router
                 if ((is_string($route)) && (strpos($route, '::') !== false)) {
                     list($controller, $method) = explode('::', ($route[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $route);
                     if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
-                        return $this->invokeClassMethod(new $controller($this->project), $method);
+                        return $this->invokeClassMethod($this->invokeController($controller), $method);
                     }
                 }
 
@@ -235,7 +236,7 @@ class Router
         $method = self::ROUTE_NOTFOUND;
         $controller = $this->findController((empty($path) ? 'Index' : $path[0]));
         if (($controller) && (class_exists($controller)) && (is_callable($controller . '::' . $method))) {
-            $routeNotFoundController = new $controller($this->project);
+            $routeNotFoundController = $this->invokeController($controller);
             $routeNotFoundController->$method($this->url, $this->project);
             $this->log[] = sprintf("[routeNotFound] Found method %s:%s.", $controller, $method);
             // Return true to indicate that a method is found
@@ -248,7 +249,71 @@ class Router
     }
 
     /**
+     * Creates a controller object and passes a variable number of DI parameters
+     * to the constructor if it exists
+     * 
+     * @param $controller the name of the controller
+     */
+    protected function invokeController(string $controller)
+    {
+
+        $classReflection = new \ReflectionClass($controller);
+        $constructorReflection = $classReflection->getConstructor();
+
+        // No constructor, so return the default
+        if (!($constructorReflection instanceof \ReflectionMethod)) {
+            return new $controller($this->project);
+        }
+
+        // Get an array of ReflectionParameter objects
+        $params = $constructorReflection->getParameters();
+        // Injection array, default first param is always Project
+        $inject[] = $this->project;
+        // Loop through parameters to determine their class types
+        foreach($params as $param) {
+            // If no class name, ignore it rather than fail
+            if (!$this->getParamClassName($param)) {
+                $inject[] = null;
+                continue;    
+            }
+            // Try to get the class type-hint
+            try {
+                $paramClass = $param->getClass();
+            } catch (\Exception $e) {
+                // Rethrow the error with further information
+                throw new ClassNotFoundException($param->getName(), $controller ?? null, '__construct');
+            }
+            // Fallback - if it's not a class, inject a null value
+            if (!($paramClass instanceof \ReflectionClass)) {
+                $inject[] = null;
+                continue;
+            }
+            // Special case for a Url, Project and Context type hints, send in the one we already have
+            switch($paramClass->name) {
+                case 'Yurly\\Core\\Project':
+                case 'Yurly\\Core\\Context':
+                    // ignore
+                    break;
+                case 'Yurly\\Core\\Url':
+                    $inject[] = $this->url;
+                    break;
+                default:
+                    if ($this->project->container && ($this->project->container instanceof ContainerInterface) && ($this->project->container->has($paramClass->name))) {
+                        $inject[] = $this->project->container->get($paramClass->name);
+                    } else {
+                        $inject[] = null;
+                    }
+                    break;
+            }
+        }
+
+        return $classReflection->newInstanceArgs($inject);
+
+    }
+
+    /**
      * Calls the specified class method and injects parameters
+     * 
      * @param $class controller class object
      * @param $method string method name
      * @todo Instantiate parameters only once per global session
@@ -279,6 +344,7 @@ class Router
 
     /**
      * Calls the specified function or closure and injects parameters
+     * 
      * @param $function the closure
      */
     protected function invokeFunction($function): bool
@@ -359,6 +425,9 @@ class Router
                     if ($this->isRequestClass($paramClass->name, false)) {
                         $paramInstance = $this->instantiateRequestClass($param, $paramClass);
                         $paramInstance->hydrate();
+                    } else
+                    if ($this->project->container instanceof ContainerInterface && $this->project->container->has($paramClass->name)) {
+                        $paramInstance = $this->project->container->get($paramClass->name);
                     } else {
                         $paramInstance = new $paramClass->name(
                             new Context($this->project, $this->url, $this->caller)
@@ -449,7 +518,7 @@ class Router
             list($controller, $method) = explode('::', ($response[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $response);
             if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
                 // Override parameters:
-                $class = new $controller($this->project);
+                $class = $this->invokeController($controller);
                 $reflection = new \ReflectionMethod($class, $method);
             }
         } else
@@ -520,7 +589,7 @@ class Router
         if ((is_string($handlerMethod)) && (strpos($handlerMethod, '::') !== false)) {
             list($controller, $method) = explode('::', ($handlerMethod[0] != '\\' ? $this->project->ns . '\\Controllers\\' : '') . $handlerMethod);
             if ((class_exists($controller)) && (is_callable($controller . '::' . $method, true))) {
-                $middlewareClass = new $controller($this->project);
+                $middlewareClass = $this->invokeController($controller);
                 $middlewareReflection = new \ReflectionMethod($middlewareClass, $method);
             }
         } else
@@ -572,7 +641,11 @@ class Router
                     $inject[] = $state;
                     break;
                 default:
-                    $inject[] = null;
+                    if ($this->project->container instanceof ContainerInterface && $this->project->container->has($paramClass->name)) {
+                        $inject[] =  $this->project->container->get($paramClass->name);
+                    } else {
+                        $inject[] = null;
+                    }
                     break;
             }
         }
@@ -725,12 +798,12 @@ class Router
     {
 
         if (method_exists($controller, $method)) {
-            return $this->invokeClassMethod(new $controller($this->project), $method);
+            return $this->invokeClassMethod($this->invokeController($controller), $method);
         }
 
         $methodMatch = $this->scanForMethodMatches($controller);
         if ($methodMatch) {
-            return $this->invokeClassMethod(new $controller($this->project), $methodMatch);
+            return $this->invokeClassMethod($this->invokeController($controller), $methodMatch);
         }
 
         return false;

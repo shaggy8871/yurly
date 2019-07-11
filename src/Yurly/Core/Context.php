@@ -16,7 +16,7 @@ class Context
     protected $url;
     protected $caller;
 
-    public function __construct(Project $project = null, Url $url = null, Caller $caller = null)
+    public function __construct(?Project $project = null, ?Url $url = null, ?Caller $caller = null)
     {
 
         $this->project = $project;
@@ -28,7 +28,7 @@ class Context
     /**
      * Return the project
      */
-    public function getProject(): Project
+    public function getProject(): ?Project
     {
 
         return $this->project;
@@ -38,7 +38,7 @@ class Context
     /**
      * Return the parsed url class that we're using
      */
-    public function getUrl(): Url
+    public function getUrl(): ?Url
     {
 
         return $this->url;
@@ -48,7 +48,7 @@ class Context
     /**
      * Return the caller information
      */
-    public function getCaller(): Caller
+    public function getCaller(): ?Caller
     {
 
         return $this->caller;
