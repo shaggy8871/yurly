@@ -754,7 +754,8 @@ class ExampleTest extends TestCase
                 Twig::class => $mockResponse
             ]);
 
-        $this->assertEquals($mockResponse->statusCode, 200);
+        $mockResponse->assertOk();
+        $mockResponse->assertContentType('text/html');
     }
 
 }

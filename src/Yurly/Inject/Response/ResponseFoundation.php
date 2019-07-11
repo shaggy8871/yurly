@@ -158,6 +158,8 @@ abstract class ResponseFoundation
     public function redirect(string $url, int $statusCode = 302): void
     {
 
+        $this->statusCode = $statusCode;
+
         header(sprintf("Location: %s", $url), true, $statusCode);
         die(); // make sure we stop
 

@@ -228,4 +228,14 @@ class Index extends Controller
 
     }
 
+    /**
+     * NotFound handler
+     */
+    public function routeNotFound(Html $response): void
+    {
+
+        $response->setStatusCode(404);
+
+    }
+
 }

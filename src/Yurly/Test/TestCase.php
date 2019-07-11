@@ -397,7 +397,7 @@ class TestCase extends PhpUnitTestCase
 
         $responseMock = $this->getMockBuilder($class)
             ->setConstructorArgs([$this->getContext()])
-            ->setMethods(['render', 'redirect'])
+            ->setMethods(['render', 'redirect', 'assertRedirect', 'assertStatusCode', 'assertOk', 'assertNotFound', 'assertContentType'])
             ->getMock();
 
         $responseMock
@@ -411,10 +411,37 @@ class TestCase extends PhpUnitTestCase
         $responseMock
             ->method('redirect')
             ->will($this->returnCallback(function(string $url, int $statusCode = 302) use ($responseMock) {
+                $responseMock->setStatusCode($statusCode);
                 $responseMock->redirect = (object) [
                     'url' => $url,
                     'statusCode' => $statusCode
                 ];
+            }));
+        // Helper assertions
+        $responseMock
+            ->method('assertRedirect')
+            ->will($this->returnCallback(function(string $url) use ($responseMock) {
+                $this->assertEquals($responseMock->redirect->url, $url);
+            }));
+        $responseMock
+            ->method('assertStatusCode')
+            ->will($this->returnCallback(function(int $statusCode) use ($responseMock) {
+                $this->assertEquals($responseMock->statusCode, $statusCode);
+            }));
+        $responseMock
+            ->method('assertOk')
+            ->will($this->returnCallback(function() use ($responseMock) {
+                $this->assertEquals($responseMock->statusCode, 200);
+            }));
+        $responseMock
+            ->method('assertNotFound')
+            ->will($this->returnCallback(function() use ($responseMock) {
+                $this->assertEquals($responseMock->statusCode, 404);
+            }));
+        $responseMock
+            ->method('assertContentType')
+            ->will($this->returnCallback(function(string $contentType) use ($responseMock) {
+                $this->assertEquals($responseMock->contentType, $contentType);
             }));
 
         return $responseMock;

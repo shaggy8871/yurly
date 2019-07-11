@@ -16,6 +16,7 @@ use Yurly\Core\Interfaces\RouteResolverInterface;
 use Yurly\Core\Utils\{Annotations, Canonical};
 use Yurly\Middleware\MiddlewareState;
 use Yurly\Inject\Request\RequestInterface;
+use Yurly\Inject\Response\Html;
 use Psr\Container\ContainerInterface;
 
 class Router
@@ -466,9 +467,11 @@ class Router
             if ($defaultResponseClass) {
                 $responseClass = $defaultResponseClass;
             } else {
-                $responseClass = new \Yurly\Inject\Response\Html(
-                    new Context($this->project, $this->url, $this->caller)
-                );
+                $responseClass = 
+                    $this->mockParameters[Html::class] ?? 
+                    new Html(
+                        new Context($this->project, $this->url, $this->caller)
+                    );
                 if (is_callable([$responseClass, 'setView'])) {
                     $this->setResponseDefaults($responseClass, $reflection, $class);
                 }

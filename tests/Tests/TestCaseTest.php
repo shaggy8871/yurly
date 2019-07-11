@@ -97,8 +97,8 @@ class TestCaseTest extends TestCase
                 Json::class => $mockResponse
             ]);
 
-        $this->assertEquals($mockResponse->statusCode, 200);
-        $this->assertEquals($mockResponse->contentType, 'application/json');
+        $mockResponse->assertOk();
+        $mockResponse->assertContentType('application/json');
 
     }
 
@@ -117,7 +117,27 @@ class TestCaseTest extends TestCase
                 Html::class => $mockResponse
             ]);
 
-        $this->assertEquals($mockResponse->redirect->url, '/');
+        $mockResponse->assertRedirect('/');
+        $mockResponse->assertStatusCode(302);
+
+    }
+
+    public function testResponseWithAssertNotFound()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/notfound');
+
+        $mockResponse = $this
+            ->getResponseMock(Html::class);
+
+        $this
+            ->callRouteWithMocks([
+                Html::class => $mockResponse
+            ]);
+
+        $mockResponse->assertNotFound();
 
     }
 
