@@ -194,7 +194,7 @@ Yurly exposes options for middleware code to run before and after a route is cal
 
 ### @before
 
-For each route, adding a `@before` docblock above the method declaration will run the designated methods before calling the route. This may, for instance, be used to point the user to an alternative route, or to look up additional metadata before the route code runs. Middleware may be specified as either the name of the controller method to call, or if outside the controller, in the form `Controller::method`. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
+For each route, adding a `@before` docblock above the method declaration will run the designated methods before calling the route. This may, for instance, be used to point the user to an alternative route, or to look up additional metadata before the route code runs. Middleware may be specified as either the name of the method to call, or if outside the controller, in the form `Controller::method`. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
 
 To alter the route that gets rendered, middleware should return an alternative route as a string in the form `Controller::routeMethod`.
 

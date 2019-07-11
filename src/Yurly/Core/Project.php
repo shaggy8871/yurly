@@ -13,7 +13,6 @@ class Project
     protected $debugMode;
     protected $path;
     protected $config;
-    protected $services;
 
     public function __construct($hosts, string $ns, string $path = '', bool $debugMode = self::DEBUG_OFF)
     {
@@ -80,32 +79,12 @@ class Project
     }
 
     /**
-     * Returns the public service container
-     */
-    public function getService(string $name): ?\stdClass
-    {
-
-        return $this->services[$name] ?? null;
-
-    }
-
-    /**
      * Handy accessor to update debug mode value
      */
     public function setDebugMode(bool $debugMode): void
     {
 
         $this->debugMode = $debugMode;
-
-    }
-
-    /**
-     * Add a public service to the project
-     */
-    public function addService(string $name, \stdClass $object): void
-    {
-
-        $this->services[$name] = $object;
 
     }
 
