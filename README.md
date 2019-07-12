@@ -6,7 +6,21 @@ Yurly is a lightweight web MVC routing library for PHP 7. It's easy to get start
 
 It also supports a multi-site implementation right out of the box.
 
-Installation:
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Basic Routing](#basic-routing)
+3. [Route Parameters](#route-parameters)
+4. [Accepting Multiple Request Types](#accepting-multiple-request-types)
+5. [Middleware](#middleware)
+6. [Custom Request/Response Classes](#custom-requestresponse-classes)
+7. [Dependency Injected Parameters](#dependency-injected-parameters)
+8. [Custom Route Resolvers](#custom-route-resolvers)
+9. [Multi-site Setup](#multi-site-setup)
+10. [Using `ymake` Helper](#using-ymake-helper)
+11. [Unit Testing](#unit-testing)
+
+## Installation:
 
 In composer.json:
 ```
@@ -446,7 +460,7 @@ class User extends Controller
 
 ## Dependency Injected Parameters
 
-Yurly does not include native support for dependency injection outside of Request and Response classes, but it's easy enough to add a PSR-11 compatible DI solution through composer. Here's an example using [https://github.com/PHP-DI/PHP-DI]:
+Yurly does not include native support for dependency injection outside of Request and Response classes, but it's easy enough to add a PSR-11 compatible DI solution through composer. Here's an example using [PHP-DI](https://github.com/PHP-DI/PHP-DI):
 
 composer.json
 ```
@@ -632,7 +646,7 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 
 You will be prompted for further details based on the command used.
 
-## Unit testing
+## Unit Testing
 
 Yurly extends PHPUnit's TestCase class with additional methods to help with testing of routes. Here's a simple example:
 
