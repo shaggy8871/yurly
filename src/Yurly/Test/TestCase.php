@@ -356,6 +356,16 @@ class TestCase extends PhpUnitTestCase
     }
 
     /**
+     * Get the router mock class's log file
+     */
+    protected function getRouterMockLog()
+    {
+
+        return $this->routerMock->getLog();
+
+    }
+
+    /**
      * Create a Request class mock and enable the $callback to take its place
      * 
      * @var $class          The request class

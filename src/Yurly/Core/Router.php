@@ -102,9 +102,11 @@ class Router
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
-                    $this->log[] = sprintf("[parseUrl] Attempt 2: Found method %s:%s.", $controller, $method);
+                    $this->log[] = sprintf("[parseUrl] Attempt 2: Found method %s::%s.", $controller, $method);
                     return $methodFound;
                 }
+            } else {
+                $this->log[] = sprintf("[parseUrl] Attempt 2 failed. Controller '%s', method '%s' not found.", $controllerClass, $method);
             }
         }
 
@@ -117,9 +119,11 @@ class Router
             if ($controller) {
                 $methodFound = $this->findMethod($controller, $method);
                 if ($methodFound) {
-                    $this->log[] = sprintf("[parseUrl] Attempt 3: Found method %s:%s.", $controller, $method);
+                    $this->log[] = sprintf("[parseUrl] Attempt 3: Found method %s::%s.", $controller, $method);
                     return $methodFound;
                 }
+            } else {
+                $this->log[] = sprintf("[parseUrl] Attempt 3 failed. Controller '%s', method '%s' not found.", $lookupName, $method);
             }
         }
 
@@ -131,9 +135,11 @@ class Router
         if ($controller) {
             $methodFound = $this->findMethod($controller, $method);
             if ($methodFound) {
-                $this->log[] = sprintf("[parseUrl] Attempt 4: Found method %s:%s.", $controller, $method);
+                $this->log[] = sprintf("[parseUrl] Attempt 4: Found method %s::%s.", $controller, $method);
                 return $methodFound;
             }
+        } else {
+            $this->log[] = sprintf("[parseUrl] Attempt 4 failed. Controller '%s', method '%s' not found.", 'Index', $method);
         }
 
         // Can't determine route, so start fallback steps
@@ -417,6 +423,7 @@ class Router
                     $inject[] = new Context($this->project, $this->url, $this->caller);
                     break;
                 default:
+                    $paramInstance = null;
                     if (isset($this->mockParameters[$paramClass->name])) {
                         $paramInstance = $this->mockParameters[$paramClass->name];
                         if ($this->isRequestClass($paramClass->name, false)) {
@@ -427,12 +434,13 @@ class Router
                         $paramInstance = $this->instantiateRequestClass($param, $paramClass);
                         $paramInstance->hydrate();
                     } else
-                    if ($this->project->container instanceof ContainerInterface && $this->project->container->has($paramClass->name)) {
-                        $paramInstance = $this->project->container->get($paramClass->name);
-                    } else {
+                    if ($this->isResponseClass($paramClass->name, false)) {
                         $paramInstance = new $paramClass->name(
                             new Context($this->project, $this->url, $this->caller)
                         );
+                    } else
+                    if ($this->project->container instanceof ContainerInterface && $this->project->container->has($paramClass->name)) {
+                        $paramInstance = $this->project->container->get($paramClass->name);
                     }
                     // If this is a response class, set the default view filename
                     if ($this->isResponseClass($paramInstance)) {
@@ -787,7 +795,9 @@ class Router
         $projectControllers = $this->project->ns . '\\Controllers\\';
 
         if (class_exists($projectControllers . $controller)) {
-            return $projectControllers . $controller;
+            try {
+                return (new \ReflectionClass($projectControllers . $controller))->getName();
+            } catch (\Exception $e) { }
         }
 
         return null;

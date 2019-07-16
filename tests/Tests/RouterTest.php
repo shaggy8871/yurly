@@ -464,7 +464,7 @@ class RouterTest extends TestCase
 
         return $this
             ->setProjectNamespace('Tests')
-            ->setProjectPath('tests');
+            ->setProjectPath('.');
 
     }
 
