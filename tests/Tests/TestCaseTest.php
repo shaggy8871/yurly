@@ -4,7 +4,7 @@ namespace Tests;
 
 use Yurly\Test\TestCase;
 use Yurly\Inject\Request\RouteParams;
-use Yurly\Inject\Response\Json;
+use Yurly\Inject\Response\{Html, Json};
 
 class TestCaseTest extends TestCase
 {
@@ -96,6 +96,48 @@ class TestCaseTest extends TestCase
             ->callRouteWithMocks([
                 Json::class => $mockResponse
             ]);
+
+        $mockResponse->assertOk();
+        $mockResponse->assertContentType('application/json');
+
+    }
+
+    public function testCallRouteWithRedirect()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/redirect');
+
+        $mockResponse = $this
+            ->getResponseMock(Html::class);
+
+        $this
+            ->callRouteWithMocks([
+                Html::class => $mockResponse
+            ]);
+
+        $mockResponse->assertRedirect('/');
+        $mockResponse->assertStatusCode(302);
+
+    }
+
+    public function testResponseWithAssertNotFound()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/notfound');
+
+        $mockResponse = $this
+            ->getResponseMock(Html::class);
+
+        $this
+            ->callRouteWithMocks([
+                Html::class => $mockResponse
+            ]);
+
+        $mockResponse->assertNotFound();
 
     }
 

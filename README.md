@@ -6,7 +6,21 @@ Yurly is a lightweight web MVC routing library for PHP 7. It's easy to get start
 
 It also supports a multi-site implementation right out of the box.
 
-Installation:
+## Table of Contents
+
+1. [Installation](#installation)
+2. [Basic Routing](#basic-routing)
+3. [Route Parameters](#route-parameters)
+4. [Accepting Multiple Request Types](#accepting-multiple-request-types)
+5. [Middleware](#middleware)
+6. [Custom Request/Response Classes](#custom-requestresponse-classes)
+7. [Dependency Injected Parameters](#dependency-injected-parameters)
+8. [Custom Route Resolvers](#custom-route-resolvers)
+9. [Multi-site Setup](#multi-site-setup)
+10. [Using `ymake` Helper](#using-ymake-helper)
+11. [Unit Testing](#unit-testing)
+
+## Installation:
 
 In composer.json:
 ```
@@ -190,10 +204,23 @@ class Example extends Controller
 
 ## Middleware
 
-You can have Yurly call a method before each route to check if it should proceed. The `@before` docblock can be used to control or restrict the flow as needed.
+Yurly exposes options for middleware code to run before and after a route is called.
 
-Return an alternative route in the format `Controller::method` to have it render content from another controller/route method.
+### @before
 
+For each route, adding a `@before` docblock above the method declaration will run the designated methods before calling the route. This may, for instance, be used to point the user to an alternative route, or to look up additional metadata before the route code runs. Middleware may be specified as either the name of the method to call, or if outside the controller, in the form `Controller::method`. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
+
+To alter the route that gets rendered, middleware should return an alternative route as a string in the form `Controller::routeMethod`.
+
+To run code before all routes in a controller are called, add a `beforeAllRoutes()` method to the controller. This will be run _before_ all `@before` docblock methods are called.
+
+### @after
+
+The `@after` docblock will call the designated class methods after the route has run. Each middleware method will receive a copy of the response, and may alter it before it renders to the browser. Multiple methods may be specified as a comma-delimited list and will be run in the order supplied.
+
+To run middleware after all routes in a controller are called, add an `afterAllRoutes()` method to the controller. This code will be run _before_ all `@after` docblock methods are called.
+
+src/Myapp/Middleware/Auth.php:
 ```php
 <?php
 
@@ -204,7 +231,7 @@ use Yurly\Core\{Url, Context};
 trait Auth
 {
 
-    public function isLoggedIn(Url $url, Context $context)
+    public function isLoggedIn(Url $url, Context $context): ?string
     {
         $caller = $context->getCaller();
         $annotations = $caller->getAnnotations();
@@ -218,6 +245,7 @@ trait Auth
         if (!$this->authenticate($roles)) {
             return 'User::routeLogout';
         }
+        return null;
     }
 
     private function authenticate(array $roles): bool
@@ -227,6 +255,7 @@ trait Auth
 
 }
 ```
+src/Myapp/Controllers/Admin.php:
 ```php
 <?php
 
@@ -254,7 +283,66 @@ class Admin extends Controller
     }
 
 }
+```
 
+### MiddlewareState
+
+Middleware methods are able to use a class called `MiddlewareState` to check the response from the previous middleware method, and to stop the router from calling subsequent middleware methods if need be.
+
+> Calling `stop()` does not prevent the route from being called. It only prevents subsequent middleware methods from being called.
+
+src/Myapp/Controllers/Admin.php:
+```php
+<?php
+
+namespace Myapp\Controllers;
+
+use Yurly\Core\Controller;
+use Yurly\Inject\Response\Twig;
+use Yurly\Middleware\MiddlewareState;
+use Myapp\Models\User;
+use Myapp\Models\AdminPermissions;
+
+class Admin extends Controller
+{
+
+    private $user;
+    private $permissions;
+
+    /**
+     * @before isLoggedIn, hasPermission
+     */
+    public function routeDefault(Twig $response): array
+    {
+        return [
+            'user' => $this->user,
+            'permissions' => $this->permissions,
+        ];
+    }
+
+    public function isLoggedIn(MiddlewareState $state): ?string
+    {
+        $this->user = User::getLoggedIn();
+        if (!($this->user instanceof User)) {
+            // Don't call hasPermission, go straight to login route
+            $state->stop();
+            return 'User::routeLogin';
+        }
+        return null;
+    }
+
+    public function hasPermission(MiddlewareState $state): ?string
+    {
+        $this->permissions = AdminPermissions::getPermissions($this->user);
+        if (empty($this->permissions)) {
+            // Go to access denied route
+            $state->stop();
+            return 'User::routeAccessDenied';
+        }
+        return null;
+    }
+
+}
 ```
 
 ## Custom Request/Response Classes
@@ -367,6 +455,54 @@ class User extends Controller
         return $request->find();
     }
 
+}
+```
+
+## Dependency Injected Parameters
+
+Yurly does not include native support for dependency injection outside of Request and Response classes, but it's easy enough to add a PSR-11 compatible DI solution through composer. Here's an example using [PHP-DI](https://github.com/PHP-DI/PHP-DI):
+
+composer.json
+```
+composer require php-di/php-di
+```
+src/Myapp/Config.php:
+```php
+<?php
+
+namespace Myapp;
+
+use Yurly\Core\Project;
+use DI\Container;
+
+class Config
+{
+
+    public function __construct(Project $project)
+    {
+        $container = new Container();
+        $project->addContainer($container);
+    }
+
+}
+```
+src/Myapp/Controllers/Index.php:
+```php
+class Index extends Controller
+{
+    /**
+     * Yurly\Core\Project must always be the first parameter
+     */
+    public function __construct(Project $project, \Myapp\Models\User $user)
+    {
+        // $user is instantiated and ready
+        parent::__construct($project);
+    }
+
+    public function routeWithDI(\Myapp\Models\User $user)
+    {
+        // $user is instantiated and ready
+    }
 }
 ```
 
@@ -510,7 +646,7 @@ Yurly ships with a helper application called `ymake`. You can use the helper to 
 
 You will be prompted for further details based on the command used.
 
-## Unit testing
+## Unit Testing
 
 Yurly extends PHPUnit's TestCase class with additional methods to help with testing of routes. Here's a simple example:
 
@@ -631,6 +767,9 @@ class ExampleTest extends TestCase
             ->callRouteWithMocks([
                 Twig::class => $mockResponse
             ]);
+
+        $mockResponse->assertOk();
+        $mockResponse->assertContentType('text/html');
     }
 
 }

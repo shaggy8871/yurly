@@ -2,6 +2,8 @@
 
 namespace Yurly\Core;
 
+use Psr\Container\ContainerInterface;
+
 class Project
 {
 
@@ -13,7 +15,7 @@ class Project
     protected $debugMode;
     protected $path;
     protected $config;
-    protected $services;
+    protected $container;
 
     public function __construct($hosts, string $ns, string $path = '', bool $debugMode = self::DEBUG_OFF)
     {
@@ -80,16 +82,6 @@ class Project
     }
 
     /**
-     * Returns the public service container
-     */
-    public function getService(string $name): ?\stdClass
-    {
-
-        return $this->services[$name] ?? null;
-
-    }
-
-    /**
      * Handy accessor to update debug mode value
      */
     public function setDebugMode(bool $debugMode): void
@@ -100,12 +92,12 @@ class Project
     }
 
     /**
-     * Add a public service to the project
+     * Method to add a PSR-11 compatible DI container
      */
-    public function addService(string $name, \stdClass $object): void
+    public function addContainer(ContainerInterface $container): void
     {
 
-        $this->services[$name] = $object;
+        $this->container = $container;
 
     }
 
@@ -115,7 +107,7 @@ class Project
     public function __get(string $property)
     {
 
-        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config', 'container']) ?
             $this->$property : null);
 
     }
@@ -126,7 +118,7 @@ class Project
     public function __isset(string $property): bool
     {
 
-        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config']) ?
+        return (in_array($property, ['hosts', 'ns', 'path', 'debugMode', 'config', 'container']) ?
             property_exists($this, $property) : false);
 
     }

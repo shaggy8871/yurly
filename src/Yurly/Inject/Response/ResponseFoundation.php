@@ -22,7 +22,7 @@ abstract class ResponseFoundation
         $this->context = $context;
 
         // Attempt to auto-detect the view directory path
-        if (isset($this->context->getProject()->path)) {
+        if (isset($this->context->getProject()->path) && !$this->viewDir) {
             $this->setViewDir($this->context->getProject()->path . '/Views');
         }
 
@@ -57,7 +57,7 @@ abstract class ResponseFoundation
             $this->viewDir = $view['dir'];
             $this->viewFilename = $view['filename'];
         } else {
-            throw new ResponseConfigException("Parameter 1 of setView must contain keys 'dir' and 'filename'");
+            throw new ResponseConfigException("Parameter 1 of setView must contain keys 'dir' and 'filename'.");
         }
 
         return $this; // allow for chaining
@@ -157,6 +157,8 @@ abstract class ResponseFoundation
      */
     public function redirect(string $url, int $statusCode = 302): void
     {
+
+        $this->statusCode = $statusCode;
 
         header(sprintf("Location: %s", $url), true, $statusCode);
         die(); // make sure we stop
