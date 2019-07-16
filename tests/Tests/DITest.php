@@ -12,14 +12,10 @@ class DITest extends TestCase
 
         $this->expectOutputString('TestsModelsInject' . 'Tests\Models\DI::__construct' . 'Tests\Controllers\DI::routeDefault');
 
-        try {
-            $this
-                ->setProjectDefaults()
-                ->setUrl('/di')
-                ->callRoute();
-        } catch (\Yurly\Core\Exception\RouteNotFoundException $e) {
-            var_dump($this->getRouterMockLog());
-        }
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/di')
+            ->callRoute();
 
     }
 
@@ -28,7 +24,7 @@ class DITest extends TestCase
 
         return $this
             ->setProjectNamespace('Tests')
-            ->setProjectPath('.');
+            ->setProjectPath('tests');
 
     }
 

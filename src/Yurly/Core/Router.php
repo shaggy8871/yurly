@@ -797,7 +797,21 @@ class Router
         if (class_exists($projectControllers . $controller)) {
             try {
                 return (new \ReflectionClass($projectControllers . $controller))->getName();
-            } catch (\Exception $e) { }
+            } catch (\Exception $e) {}
+        }
+
+        // Fallback for case sensitive file systems
+        $glob = '';
+        $controllerLength = strlen($controller);
+        for($i = 0; $i < $controllerLength; $i++) {
+            $glob .= '[' . strtolower($controller[$i]) . strtoupper($controller[$i]) . ']';
+        }
+        $glob = $this->project->path . '/Controllers/' . $glob . '.php';
+
+        // Use glob range search to find a case insensitive match
+        $match = glob($glob, GLOB_NOSORT);
+        if ($match) {
+            return $projectControllers . basename(array_shift($match), '.php');
         }
 
         return null;

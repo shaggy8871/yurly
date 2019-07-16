@@ -158,7 +158,7 @@ class TestCaseTest extends TestCase
 
         return $this
             ->setProjectNamespace('Tests')
-            ->setProjectPath('.');
+            ->setProjectPath('tests');
 
     }
 
