@@ -19,7 +19,7 @@ abstract class RequestFoundation
         $this->context = $context;
 
         // Attempt to guess the type
-        if ($this->context->getUrl()->requestMethod) {
+        if ($this->context->getUrl() && $this->context->getUrl()->requestMethod) {
             $this->type = ucfirst(strtolower($this->context->getUrl()->requestMethod));
         } else {
             $this->type = 'Unknown';
