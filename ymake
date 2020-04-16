@@ -27,12 +27,12 @@ if (! isset($argv[1])) {
 switch ($argv[1]) {
     case 'project':
         echo "\n";
-        echo "Which project do you want to create?\n";
+        echo "1. Where do you want your project MVC files installed?\n";
         $projectClasses = array_values($autoloadClasses);
         foreach($projectClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
         }
-        $project = readline("\nSelect project, or 0 to cancel: ");
+        $project = readline("\nSelect project directory, or 0 to cancel: ");
         if (!$project) {
             echo "\n";
             exit(0);
@@ -41,34 +41,60 @@ switch ($argv[1]) {
             echo sprintf("  ❌  '%d' is not a valid option.\n\n", $project);
             exit(1);
         }
-        $project = rtrim($projectClasses[$project - 1], '/');
-        if (file_exists($project)) {
-            echo sprintf("  ❌  A project/directory called '%s' already exists.\n\n", $project);
+        $projectDir = rtrim($projectClasses[$project - 1], '/');
+        if (file_exists($projectDir)) {
+            echo sprintf("  ❌  A project directory called '%s' already exists.\n\n", $projectDir);
             exit(1);
         }
+
+        echo "\n";
+        echo "2. Where do you want your tests installed?\n";
+        $testClasses = array_values($autoloadDevClasses);
+        foreach($testClasses as $k => $path) {
+            echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
+        }
+        $test = readline("\nSelect test directory, or 0 to cancel: ");
+        if (!$test) {
+            echo "\n";
+            exit(0);
+        }
+        if (!isset($testClasses[$test - 1])) {
+            echo sprintf("  ❌  '%d' is not a valid option.\n\n", $test);
+            exit(1);
+        }
+        $testDir = rtrim($testClasses[$test - 1], '/');
+        if (file_exists($testDir)) {
+            echo sprintf("  ❌  A test directory called '%s' already exists.\n\n", $testDir);
+            exit(1);
+        }
+
         echo "\n";
         echo sprintf("   Creating:\n");
-        echo sprintf("   -  %s/Controllers/Index.php\n", $project);
-        echo sprintf("   -  %s/Models/Index.php\n", $project);
-        echo sprintf("   -  %s/Views/Index/default.twig.html\n", $project);
+        echo sprintf("   -  %s/Controllers/Index.php\n", $projectDir);
+        echo sprintf("   -  %s/Models/Index.php\n", $projectDir);
+        echo sprintf("   -  %s/Views/cache\n", $projectDir);
+        echo sprintf("   -  %s/Views/base.html.twig\n", $projectDir);
+        echo sprintf("   -  %s/Views/Index/default.html.twig\n", $projectDir);
+        echo sprintf("   -  %s/Controllers/TestIndex.php\n", $testDir);
+        echo sprintf("   -  %s/Bootstrap.php\n", $testDir);
+        echo sprintf("   -  phpunit.xml\n");
         echo "\n";
-        $okay = readline('Proceed (Y/n)? ');
+        $okay = readline('Proceed (y/N)? ');
         if (trim(strtoupper($okay)) != 'Y') {
             echo "\n";
             exit(0);
         }
-        $namespace = rtrim(array_search($project . '/', $autoloadClasses), '\\');
-        createProject($project, $namespace);
+        createProject($projectDir, $testDir, $autoloadClasses, $autoloadDevClasses);
         break;
 
     case 'controller':
         echo "\n";
-        echo "Which project do you want to create a controller to?\n";
+        echo "Which directory do you want to add a controller to?\n";
         $projectClasses = array_values($autoloadClasses);
         foreach($projectClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
         }
-        $project = readline("\nSelect project, or 0 to cancel: ");
+        $project = readline("\nSelect project directory, or 0 to cancel: ");
         if (!$project) {
             echo "\n";
             exit(0);
@@ -77,9 +103,9 @@ switch ($argv[1]) {
             echo sprintf("  ❌  '%d' is not a valid option.\n\n", $project);
             exit(1);
         }
-        $project = rtrim($projectClasses[$project - 1], '/');
-        if (!file_exists($project)) {
-            echo sprintf("  ❌  A project directory called '%s' does not exist. Use `make project` to create it first.\n\n", $project);
+        $projectDir = rtrim($projectClasses[$project - 1], '/');
+        if (!file_exists($projectDir)) {
+            echo sprintf("  ❌  A project directory called '%s' does not exist. Use `ymake project` to create it first.\n\n", $project);
             exit(1);
         }
         $controller = readline("\nName of controller (or blank to cancel): ");
@@ -88,24 +114,29 @@ switch ($argv[1]) {
             exit(0);
         }
         $controller = trim(ucfirst($controller));
+        if (file_exists($projectDir . '/Controllers/' . $controller . '.php')) {
+            echo sprintf("  ❌  A controller called '%s' already exists.\n\n", $projectDir . '/Controllers/' . $controller . '.php');
+            exit(1);
+        }
+
         echo "\n";
         echo sprintf("   Creating:\n");
-        echo sprintf("   -  %s/Controllers/%s.php\n", $project, $controller);
-        echo sprintf("   -  %s/Models/%s.php\n", $project, $controller);
-        echo sprintf("   -  %s/Views/%s/default.html.twig\n", $project, $controller);
+        echo sprintf("   -  %s/Controllers/%s.php\n", $projectDir, $controller);
+        echo sprintf("   -  %s/Models/%s.php\n", $projectDir, $controller);
+        echo sprintf("   -  %s/Views/%s/default.html.twig\n", $projectDir, $controller);
         echo "\n";
-        $okay = readline('Proceed (Y/n)? ');
+        $okay = readline('Proceed (y/N)? ');
         if (trim(strtoupper($okay)) != 'Y') {
             echo "\n";
             exit(0);
         }
-        $namespace = rtrim(array_search($project . '/', $autoloadClasses), '\\');
-        createController($project, $namespace, $controller);
+
+        createController($projectDir, rtrim(array_search($projectDir . '/', $autoloadClasses), '\\'), $controller);
         break;
 
     case 'index':
         echo "\n";
-        echo "Which project(s) do you want to add to your index.php file?\n";
+        echo "Which project directory/ies do you want to add to your index.php file?\n";
         $projectClasses = array_values($autoloadClasses);
         foreach($projectClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
@@ -132,51 +163,53 @@ switch ($argv[1]) {
             echo "\n";
             exit(0);
         }
-        if (!file_exists($dir)) {
-            echo sprintf("  ❌  The directory '%s' does not exist.\n\n", $dir);
-            exit(1);
-        }
         if (file_exists($dir . '/index.php')) {
             echo sprintf("  ❌  An index.php file already exists in directory '%s'.\n\n", $dir);
             exit(1);
         }
+
         createIndex($dir, $projects);
         break;
 
     case 'test':
         echo "\n";
-        echo "Which project do you want to add a test controller class to?\n";
-        $projectClasses = array_values($autoloadDevClasses);
-        foreach($projectClasses as $k => $path) {
+        echo "Which directory do you want to add a test controller to?\n";
+        $testClasses = array_values($autoloadDevClasses);
+        foreach($testClasses as $k => $path) {
             echo sprintf("  [%d] %s\n", ($k + 1), rtrim($path, '/'));
         }
-        $project = readline("\nSelect project, or 0 to cancel: ");
-        if (!$project) {
-            echo "\n";
-            exit(0);
-        }
-        if (!isset($projectClasses[$project - 1])) {
-            echo sprintf("  ❌  '%d' is not a valid option.\n\n", $project);
-            exit(1);
-        }
-        $project = rtrim($projectClasses[$project - 1], '/');
-        $test = readline("\nName of test class (or blank to cancel): ");
+        $test = readline("\nSelect test directory, or 0 to cancel: ");
         if (!$test) {
             echo "\n";
             exit(0);
         }
-        $test = trim(ucfirst($test));
+        if (!isset($testClasses[$test - 1])) {
+            echo sprintf("  ❌  '%d' is not a valid option.\n\n", $test);
+            exit(1);
+        }
+        $testDir = rtrim($testClasses[$test - 1], '/');
+        $controller = readline("\nName of test controller (or blank to cancel): ");
+        if (!$controller) {
+            echo "\n";
+            exit(0);
+        }
+        $controller = trim(ucfirst($controller));
+        if (file_exists($testDir . '/Controllers/' . $controller . 'Test.php')) {
+            echo sprintf("  ❌  A test controller called '%s' already exists.\n\n", $testDir . '/Controllers/' . $controller . 'Test.php');
+            exit(1);
+        }
+
         echo "\n";
         echo sprintf("   Creating:\n");
-        echo sprintf("   -  %s/Controllers/%s.php\n", $project, $test . 'Test');
+        echo sprintf("   -  %s/Controllers/%s.php\n", $testDir, $controller . 'Test');
         echo "\n";
-        $okay = readline('Proceed (Y/n)? ');
+        $okay = readline('Proceed (y/N)? ');
         if (trim(strtoupper($okay)) != 'Y') {
             echo "\n";
             exit(0);
         }
-        $namespace = rtrim(array_search($project . '/', $autoloadDevClasses), '\\');
-        createTest($project, $namespace, $test);
+
+        createTest($testDir, rtrim(array_search($testDir . '/', $autoloadDevClasses), '\\'), $controller);
         break;
 
     default:
@@ -196,47 +229,87 @@ function instructions()
     exit(1);
 }
 
-function createProject(string $project, string $namespace): void
+function createProject(string $projectDir, string $testDir, array $autoloadClasses, array $autoloadDevClasses): void
 {
 
-    mkdir($project, 0755, true);
-    mkdir($project . '/Controllers', 0755, true);
-    mkdir($project . '/Models', 0755, true);
-    mkdir($project . '/Views', 0755, true);
+    echo "\nCreating project structure:\n";
 
-    createController($project, $namespace, 'Index');
+    $projectNamespace = rtrim(array_search($projectDir . '/', $autoloadClasses), '\\');
+
+    if (!file_exists($projectDir)) {
+        mkdir($projectDir, 0755, true);
+        echo sprintf("  ✅  Created %s\n", $projectDir);
+    }
+    if (!file_exists($projectDir . '/Controllers')) {
+        mkdir($projectDir . '/Controllers', 0755, true);
+        echo sprintf("  ✅  Created %s/Controllers\n", $projectDir);
+    }
+    if (!file_exists($projectDir . '/Models')) {
+        mkdir($projectDir . '/Models', 0755, true);
+        echo sprintf("  ✅  Created %s/Models\n", $projectDir);
+    }
+    if (!file_exists($projectDir . '/Views')) {
+        mkdir($projectDir . '/Views', 0755, true);
+        echo sprintf("  ✅  Created %s/Views\n", $projectDir);
+    }
+    if (!file_exists($projectDir . '/Views/cache')) {
+        mkdir($projectDir . '/Views/cache', 0777);
+        echo sprintf("  ✅  Created %s/Views/cache\n", $projectDir);
+    }
+    if (!file_exists($projectDir . '/Views/base.html.twig')) {
+        file_put_contents($projectDir . '/Views/base.html.twig', getViewBase());
+        echo sprintf("  ✅  Created %s/Views/base.html.twig\n", $projectDir);
+    }
+    if (!file_exists($testDir)) {
+        mkdir($testDir, 0755, true);
+        echo sprintf("  ✅  Created %s\n", $testDir);
+    }
+    if (!file_exists($testDir . '/Bootstrap.php')) {
+        file_put_contents($testDir . '/Bootstrap.php', getTestBootstrap());
+        echo sprintf("  ✅  Created %s/Bootstrap.php\n", $testDir);
+    }
+    if (!file_exists('phpunit.xml')) {
+        file_put_contents('phpunit.xml', getTestXML($testDir, $projectNamespace));
+        echo sprintf("  ✅  Created phpunit.xml\n");
+    }
+
+    echo "\nCreating Index controller:";
+
+    createController($projectDir, $projectNamespace, 'Index');
+
+    echo "Creating test Index controller:";
+
+    createTest($testDir, rtrim(array_search($testDir . '/', $autoloadDevClasses), '\\'), 'Index');
+
+    echo "Creating document root:";
+
+    createIndex('public', $autoloadClasses);
 
 }
 
-function createController(string $project, string $namespace, string $controller): void
+function createController(string $projectDir, string $namespace, string $controller): void
 {
-
-    mkdir($project . '/Views/' . $controller, 0755, true);
 
     echo "\n";
 
-    if (!file_exists($project . '/Controllers/' . $controller . '.php')) {
-        file_put_contents($project . '/Controllers/' . $controller . '.php', getController($namespace, $controller));
-        echo sprintf("  ✅  Created %s/Controllers/%s.php\n", $project, $controller);
+    if (!file_exists($projectDir . '/Controllers/' . $controller . '.php')) {
+        file_put_contents($projectDir . '/Controllers/' . $controller . '.php', getController($namespace, $controller));
+        echo sprintf("  ✅  Created %s/Controllers/%s.php\n", $projectDir, $controller);
     }
 
-    if (!file_exists($project . '/Models/' . $controller . '.php')) {
-        file_put_contents($project . '/Models/' . $controller . '.php', getModel($namespace, $controller));
-        echo sprintf("  ✅  Created %s/Models/%s.php\n", $project, $controller);
+    if (!file_exists($projectDir . '/Models/' . $controller . '.php')) {
+        file_put_contents($projectDir . '/Models/' . $controller . '.php', getModel($namespace, $controller));
+        echo sprintf("  ✅  Created %s/Models/%s.php\n", $projectDir, $controller);
     }
 
-    if (!file_exists($project . '/Views/base.html.twig')) {
-        file_put_contents($project . '/Views/base.html.twig', getViewBase());
-        echo sprintf("  ✅  Created %s/Views/base.html.twig\n", $project, $controller);
+    if (!file_exists($projectDir . '/Views/' . $controller)) {
+        mkdir($projectDir . '/Views/' . $controller, 0755, true);
+        echo sprintf("  ✅  Created %s/Views/%s\n", $projectDir, $controller);
     }
 
-    if (!file_exists($project . '/Views/' . $controller . '/default.html.twig')) {
-        file_put_contents($project . '/Views/' . $controller . '/default.html.twig', getView());
-        echo sprintf("  ✅  Created %s/Views/%s/default.html.twig\n", $project, $controller);
-    }
-
-    if (!file_exists($project . '/Views/cache')) {
-        mkdir($project . '/Views/cache', 0755);
+    if (!file_exists($projectDir . '/Views/' . $controller . '/default.html.twig')) {
+        file_put_contents($projectDir . '/Views/' . $controller . '/default.html.twig', getView());
+        echo sprintf("  ✅  Created %s/Views/%s/default.html.twig\n", $projectDir, $controller);
     }
 
     echo "\n";
@@ -246,25 +319,31 @@ function createController(string $project, string $namespace, string $controller
 function createIndex(string $dir, array $autoloadClasses): void
 {
 
-    file_put_contents($dir . '/index.php', getIndex($dir, $autoloadClasses));
-
     echo "\n";
+
+    if (!file_exists($dir)) {
+        mkdir($dir, 0755);
+        echo sprintf("  ✅  Created %s\n", $dir);
+    }
+
+    file_put_contents($dir . '/index.php', getIndex($dir, $autoloadClasses));
     echo sprintf("  ✅  Created %s/index.php\n", $dir);
+
     echo "\n";
 
 }
 
-function createTest(string $path, string $namespace, string $test): void
+function createTest(string $testDir, string $namespace, string $test): void
 {
 
-    if (!file_exists($path . '/Controllers')) {
-        mkdir($path . '/Controllers', 0755, true);
+    if (!file_exists($testDir . '/Controllers')) {
+        mkdir($testDir . '/Controllers', 0755, true);
     }
 
-    file_put_contents($path . '/Controllers/' . $test . 'Test.php', getTest($path, $namespace, $test));
+    file_put_contents($testDir . '/Controllers/' . $test . 'Test.php', getTestController($namespace, $test));
 
     echo "\n";
-    echo sprintf("  ✅  Created %s/Controllers/%s.php\n", $path, $test . 'Test');
+    echo sprintf("  ✅  Created %s/Controllers/%s.php\n", $testDir, $test . 'Test');
     echo "\n";
 
 }
@@ -382,29 +461,62 @@ function getIndex(string $dir, array $autoloadClasses): string
     foreach($autoloadClasses as $namespace => $path) {
         $namespace = rtrim($namespace, '\\');
         $path = str_replace('/' . $namespace, '', rtrim($path, '/'));
-        $projects .= "\n\tnew Project('www." . strtolower($namespace) . ".com', '" . $namespace . "', '" . $path . "'),";
+        $projects .= "\n\tnew Project(\$_SERVER['HTTP_HOST'], '" . $namespace . "', '" . $path . "'),";
     }
 
     return <<<EOT
 <?php
 include_once "$curDir/vendor/autoload.php";
 
-use Yurly\Core\{Projects, Init};
+use Yurly\Core\{Project, Init};
 
 \$projects = [$projects
 ];
 
 \$app = new Init(\$projects);
+
 \$app->onRouteNotFound(function(array \$data) {
     // Handle 404 errors here
 });
+
 \$app->run();
 
 EOT;
 
 }
 
-function getTest(string $path, string $namespace, string $test): string
+function getTestXML(string $path, string $namespace)
+{
+    return <<<EOT
+<phpunit bootstrap="$path/Bootstrap.php">
+    <testsuites>
+        <testsuite name="$namespace">
+            <directory>$path</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
+EOT;
+
+}
+
+function getTestBootstrap()
+{
+    return <<<EOT
+<?php
+
+error_reporting(-1);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+date_default_timezone_set('UTC');
+
+\$loader = require dirname(__DIR__) . '/vendor/autoload.php';
+
+session_start();
+
+EOT;
+}
+
+function getTestController(string $namespace, string $test): string
 {
 
     return <<<EOT
@@ -424,7 +536,10 @@ class ${test}Test extends TestCase
             ->setUrl('/')
             ->getRouteResponse();
 
-        \$this->assertEquals(\$response, []);
+        \$this->assertEquals(\$response, [
+            'title' => 'Index',
+            'content' => 'Hello, world!'
+        ]);
 
     }
 

@@ -135,7 +135,7 @@ abstract class ResponseFoundation
         }
 
         if (isset($_SESSION['YURLY.flash'])) {
-            $flash = json_decode($_SESSION['YURLY.flash']);
+            $flash = json_decode($_SESSION['YURLY.flash'], true);
         } else {
             $flash = [];
         }
