@@ -24,39 +24,80 @@ It also supports a multi-site implementation right out of the box.
 
 In composer.json:
 ```
-"require": {
-    "shaggy8871/yurly": "^2.0"
+{
+    "require": {
+        "shaggy8871/yurly": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8"
+    },
+    "autoload": {
+        "psr-4": {
+            "Myapp\\": "./src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "./tests/"
+        }
+    }
 }
 ```
+
+Replace `Myapp` with the name of your project.
 
 Then run:
 ```
 composer install
 ```
 
-Example public/index.php file:
-```php
-<?php
-include_once "../vendor/autoload.php";
+### Create your project
 
-use Yurly\Core\{Project, Init};
+Once composer dependencies are installed, run the following to create a basic project file structure, along with your first set of controllers and tests:
 
-/**
- * Project($hostname, $namespace, $pathToNamespace, $debugMode)
- */
-$projects = [
-    new Project($_SERVER['HTTP_HOST'], 'Myapp', './src', Project::DEBUG_ON),
-];
+```bash
+vendor/bin/ymake project
+```
 
-$app = new Init($projects);
+If all works as planned, you should see output as follows:
 
-$app->onRouteNotFound(function(array $data) {
-    // Handle 404 errors here
-});
+```
+Creating project structure:
+  ✅  Created ./src
+  ✅  Created ./src/Controllers
+  ✅  Created ./src/Models
+  ✅  Created ./src/Views
+  ✅  Created ./src/Views/cache
+  ✅  Created ./src/Views/base.html.twig
+  ✅  Created ./tests
+  ✅  Created ./tests/Bootstrap.php
 
-// Start 'em up
-$app->run();
+Creating Index controller:
+  ✅  Created ./src/Controllers/Index.php
+  ✅  Created ./src/Models/Index.php
+  ✅  Created ./src/Views/Index
+  ✅  Created ./src/Views/Index/default.html.twig
 
+Creating test Index controller:
+  ✅  Created ./tests/Controllers/IndexTest.php
+
+Creating document root:
+  ✅  Created public
+  ✅  Created public/index.php
+```
+
+To test the website, run the following:
+
+```
+php -S localhost:8000 -t public/
+```
+
+Then open http://localhost:8000/ in your browser.
+
+To run unit tests:
+
+```
+vendor/bin/phpunit
 ```
 
 ## Basic Routing
