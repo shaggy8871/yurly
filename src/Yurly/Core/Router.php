@@ -12,6 +12,7 @@ use Yurly\Core\Exception\{
     ReverseRouteLookupException,
     RouteNotFoundException
 };
+use Yurly\Test\Exception\MismatchedParametersException;
 use Yurly\Core\Interfaces\RouteResolverInterface;
 use Yurly\Core\Utils\{Annotations, Canonical};
 use Yurly\Middleware\MiddlewareState;
@@ -392,6 +393,15 @@ class Router
         $inject = [];
         // Find first response class to set it as default
         $defaultResponseClass = null;
+
+        // To aid with testing, throw a better exception if mock parameters are mismatched
+        if (!empty($this->mockParameters)) {
+            $mismatchedParams = array_diff(array_keys($this->mockParameters), array_map(function($p) { return $this->getParamClassName($p); }, $params));
+            if (!empty($mismatchedParams)) {
+                throw new MismatchedParametersException(sprintf("Mock parameters do not match route parameters:\n- %s", implode("\n- ", $mismatchedParams)));
+            }
+        }
+
         // Loop through parameters to determine their class types
         foreach($params as $param) {
             // If no class name, ignore it rather than fail

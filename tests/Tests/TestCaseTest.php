@@ -3,7 +3,8 @@
 namespace Tests;
 
 use Yurly\Test\TestCase;
-use Yurly\Inject\Request\RouteParams;
+use Yurly\Test\Exception\MismatchedParametersException;
+use Yurly\Inject\Request\{Get, Post, RouteParams};
 use Yurly\Inject\Response\{Html, Json};
 
 class TestCaseTest extends TestCase
@@ -26,12 +27,12 @@ class TestCaseTest extends TestCase
 
         $caller = $this
             ->setProjectDefaults()
-            ->setUrl('/twigresponse')
+            ->setUrl('/twigResponse')
             ->getCaller();
 
         $this->assertInstanceOf(\Yurly\Core\Caller::class, $caller);
         $this->assertEquals(get_class($caller->getController()), 'Tests\\Controllers\\Index');
-        $this->assertEquals($caller->getMethod(), 'routeTwigresponse');
+        $this->assertEquals($caller->getMethod(), 'routeTwigResponse');
 
     }
 
@@ -52,7 +53,7 @@ class TestCaseTest extends TestCase
 
         $response = $this
             ->setProjectDefaults()
-            ->setUrl('/twigresponse')
+            ->setUrl('/twigResponse')
             ->getRouteResponse();
 
         $this->assertEquals($response, ['twig' => 'Okay']);
@@ -67,7 +68,7 @@ class TestCaseTest extends TestCase
             ->setUrl('/urlParamsRequest/123/test');
 
         $mockRequest = $this
-            ->getRequestMock(RouteParams::class, function($self) {
+            ->getRequestMock(RouteParams::class, function(RouteParams $self) {
                 $self->setProps(['id' => '456', 'slug' => 'hydrated']);
             });
 
@@ -85,10 +86,10 @@ class TestCaseTest extends TestCase
 
         $this
             ->setProjectDefaults()
-            ->setUrl('/jsonresponse');
+            ->setUrl('/jsonResponse');
 
         $mockResponse = $this
-            ->getResponseMock(Json::class, function($params) {
+            ->getResponseMock(Json::class, function(array $params) {
                 $this->assertEquals($params, ['json' => true]);
             });
 
@@ -99,6 +100,55 @@ class TestCaseTest extends TestCase
 
         $mockResponse->assertOk();
         $mockResponse->assertContentType('application/json');
+
+    }
+
+    public function testCallRouteWithRequestAndResponseMock()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/jsonResponseWithPost');
+
+        $mockRequest = $this
+            ->getRequestMock(Post::class, function(Post $self) {
+                $self->setProps(['id' => '123', 'slug' => 'hydrated']);
+            });
+
+        $mockResponse = $this
+            ->getResponseMock(Json::class, function(array $params) {
+                $this->assertEquals($params, ['json' => ['id' => '123', 'slug' => 'hydrated']]);
+            });
+
+        $this
+            ->callRouteWithMocks([
+                Post::class => $mockRequest,
+                Json::class => $mockResponse
+            ]);
+
+        $mockResponse->assertOk();
+        $mockResponse->assertContentType('application/json');
+
+    }
+
+    public function testCallRouteWithMismatchedRequestMock()
+    {
+
+        $this->expectException(MismatchedParametersException::class);
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/jsonResponseWithPost');
+
+        $mockRequest = $this
+            ->getRequestMock(Get::class, function(Get $self) {
+                $self->setProps(['id' => '123', 'slug' => 'hydrated']);
+            });
+
+        $this
+            ->callRouteWithMocks([
+                Get::class => $mockRequest
+            ]);
 
     }
 
@@ -127,7 +177,7 @@ class TestCaseTest extends TestCase
 
         $this
             ->setProjectDefaults()
-            ->setUrl('/notfound');
+            ->setUrl('/notFound');
 
         $mockResponse = $this
             ->getResponseMock(Html::class);
