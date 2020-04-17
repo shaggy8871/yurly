@@ -778,6 +778,21 @@ class ExampleTest extends TestCase
 }
 ```
 
+To test generic `Request` classes (where the request method is unknown in advance, or where multiple inputs are expected within a single request), use the `setTypeProps` method to configure props for each request type:
+
+```php
+$mockRequest = $this->getRequestMock(Request::class, function(Get $self) {
+    $self->setTypeProps(Request::TYPE_POST, [
+        'var1' => 'val1',
+        'var2' => 'val2',
+        'var3' => 'val3',
+    ]);
+    $self->setTypeProps(Request::TYPE_GET, [
+        'query' => 'test'
+    ]);
+});
+```
+
 You can mock the response class as well, and capture the output before it renders.
 
 > You cannot pass a mock Request class to `getRouteResponse` as it already uses one to capture the output. Instead, use the `callRouteWithMocks` method.

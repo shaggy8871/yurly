@@ -170,6 +170,41 @@ class Request extends RequestFoundation implements RequestInterface
     }
 
     /**
+     * Set the request type with props.
+     */
+    public function setTypeProps(string $type, array $props): void
+    {
+
+        switch($type) {
+            case self::TYPE_GET:
+                $this->get = new Get($this->context);
+                $this->get->setProps($props);
+                break;
+            case self::TYPE_POST:
+                $this->post = new Post($this->context);
+                $this->post->setProps($props);
+                break;
+            case self::TYPE_PUT:
+                $this->put = new Put($this->context);
+                $this->put->setProps($props);
+                break;
+            case self::TYPE_DELETE:
+                $this->delete = new Delete($this->context);
+                $this->delete->setProps($props);
+                break;
+            case self::TYPE_PATCH:
+                $this->patch = new Patch($this->context);
+                $this->patch->setProps($props);
+                break;
+            case self::TYPE_ROUTE_PARAMS:
+                $this->routeParams = new RouteParams($this->context);
+                $this->routeParams->setProps($props);
+                break;
+        }
+
+    }
+
+    /**
      * To meet contract requirements
      */
     public function hydrate(): void
