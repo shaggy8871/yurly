@@ -382,7 +382,6 @@ class TestCase extends PhpUnitTestCase
             ->getMock();
 
         $requestMock
-            ->expects($this->once())
             ->method('hydrate')
             ->will($this->returnCallback(function() use ($callback, $requestMock) {
                 if (is_callable($callback)) {
@@ -411,7 +410,6 @@ class TestCase extends PhpUnitTestCase
             ->getMock();
 
         $responseMock
-            ->expects($this->once())
             ->method('render')
             ->will($this->returnCallback(function($params) use ($callback) {
                 if (is_callable($callback)) {

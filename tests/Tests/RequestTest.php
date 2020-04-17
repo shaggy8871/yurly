@@ -6,6 +6,9 @@ use PHPUnit\Framework\TestCase;
 use Yurly\Core\{Project, Url, Context, Caller};
 use Yurly\Core\Exception\URLParseException;
 
+/**
+ * @runTestsInSeparateProcesses
+ */
 class RequestTest extends TestCase
 {
 

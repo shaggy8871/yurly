@@ -763,7 +763,7 @@ class ExampleTest extends TestCase
             ->setProjectPath('./src')
             ->setUrl('/');
 
-        $mockRequest = $this->getRequestMock(Get::class, function($self) {
+        $mockRequest = $this->getRequestMock(Get::class, function(Get $self) {
             $self->setProps(['hello' => 'World']);
         });
 
@@ -800,7 +800,7 @@ class ExampleTest extends TestCase
             ->setProjectPath('./src')
             ->setUrl('/');
 
-        $mockResponse = $this->getResponseMock(Twig::class, function($params) {
+        $mockResponse = $this->getResponseMock(Twig::class, function(array $params) {
             $this->assertEquals($params, ['message' => 'Welcome!']);
         });
 

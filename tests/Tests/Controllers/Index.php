@@ -5,6 +5,7 @@ namespace Tests\Controllers;
 use Yurly\Core\Controller;
 use Yurly\Inject\Request\{
     Get, 
+    Post, 
     RouteParams
 };
 use Yurly\Inject\Response\{
@@ -28,6 +29,13 @@ class Index extends Controller
     {
 
         return ['json' => true];
+
+    }
+
+    public function routeJsonResponseWithPost(Post $request, Json $response): array
+    {
+
+        return ['json' => $request->toArray()];
 
     }
 
