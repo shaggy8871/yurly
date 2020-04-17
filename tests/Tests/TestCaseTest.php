@@ -181,6 +181,30 @@ class TestCaseTest extends TestCase
 
     }
 
+    public function testCallRouteWithUrlComponents()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/jsonResponseWithRequest', [
+                'requestMethod' => 'POST'
+            ]);
+
+        $mockRequest = $this
+            ->getRequestMock(Request::class, function(Request $self) {
+                $this->assertEquals($self->getType(), Request::TYPE_POST);
+                $this->assertEquals($self->isPost(), true);
+            });
+
+        $response = $this
+            ->getRouteResponse([
+                Request::class => $mockRequest,
+            ]);
+
+        $this->assertEquals($response, ['get' => [], 'post' => []]);
+
+    }
+
     public function testCallRouteWithRedirect()
     {
 

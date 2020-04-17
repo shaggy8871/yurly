@@ -113,17 +113,18 @@ class TestCase extends PhpUnitTestCase
      * Set the URL
      * 
      * @var $url            The URL to use when finding the route
+     * @var $urlComponents  Additional components used to create the Url object
      */
-    protected function setUrl(string $url): self
+    protected function setUrl(string $url, array $urlComponents = []): self
     {
 
         $parsedUrl = parse_url($url);
 
-        $this->url = new Url([
+        $this->url = new Url(array_merge($urlComponents, [
             'host' => $parsedUrl['host'] ?? static::DEFAULT_HOST,
             'pathComponents' => explode('/', substr($parsedUrl['path'], 1) ?: ''),
             'requestUri' => $parsedUrl['path'],
-        ]);
+        ]));
 
         return $this;
 
