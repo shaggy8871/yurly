@@ -781,7 +781,7 @@ class ExampleTest extends TestCase
 To test generic `Request` classes (where the request method is unknown in advance, or where multiple inputs are expected within a single request), use the `setTypeProps` method to configure props for each request type:
 
 ```php
-$mockRequest = $this->getRequestMock(Request::class, function(Get $self) {
+$mockRequest = $this->getRequestMock(Request::class, function(Request $self) {
     $self->setTypeProps(Request::TYPE_POST, [
         'var1' => 'val1',
         'var2' => 'val2',
