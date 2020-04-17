@@ -778,9 +778,13 @@ class ExampleTest extends TestCase
 }
 ```
 
-To test generic `Request` classes (where the request method is unknown in advance, or where multiple inputs are expected within a single request), use the `setTypeProps` method to configure props for each request type:
+To test generic `Request` classes (where the request method is unknown in advance, or where multiple inputs are expected within a single request), use the `setTypeProps` method to configure props for each request type. To set the default request method, pass `requestMethod` via array as a second parameter to the `$this->setUrl()` method.
 
 ```php
+$this->setUrl('/', [
+    'requestMethod' => 'POST'
+]);
+
 $mockRequest = $this->getRequestMock(Request::class, function(Request $self) {
     $self->setTypeProps(Request::TYPE_POST, [
         'var1' => 'val1',
