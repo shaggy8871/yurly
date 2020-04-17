@@ -6,6 +6,7 @@ use Yurly\Core\Controller;
 use Yurly\Inject\Request\{
     Get, 
     Post, 
+    Request, 
     RouteParams
 };
 use Yurly\Inject\Response\{
@@ -36,6 +37,13 @@ class Index extends Controller
     {
 
         return ['json' => $request->toArray()];
+
+    }
+
+    public function routeJsonResponseWithRequest(Request $request, Json $response): array
+    {
+
+        return ['get' => $request->get()->toArray(), 'post' => $request->post()->toArray()];
 
     }
 

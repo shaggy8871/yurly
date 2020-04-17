@@ -4,7 +4,7 @@ namespace Tests;
 
 use Yurly\Test\TestCase;
 use Yurly\Test\Exception\MismatchedParametersException;
-use Yurly\Inject\Request\{Get, Post, RouteParams};
+use Yurly\Inject\Request\{Get, Post, Request, RouteParams};
 use Yurly\Inject\Response\{Html, Json};
 
 class TestCaseTest extends TestCase
@@ -148,6 +148,35 @@ class TestCaseTest extends TestCase
         $this
             ->callRouteWithMocks([
                 Get::class => $mockRequest
+            ]);
+
+    }
+
+    public function testCallRouteWithRequestTypeProps()
+    {
+
+        $this
+            ->setProjectDefaults()
+            ->setUrl('/jsonResponseWithRequest');
+
+        $mockRequest = $this
+            ->getRequestMock(Request::class, function(Request $self) {
+                $self->setTypeProps(Request::TYPE_POST, ['id' => '123', 'slug' => 'post']);
+                $self->setTypeProps(Request::TYPE_GET,  ['id' => '456', 'slug' => 'get']);
+            });
+
+        $mockResponse = $this
+            ->getResponseMock(Json::class, function(array $params) {
+                $this->assertEquals($params, [
+                    'post' => ['id' => '123', 'slug' => 'post'],
+                    'get'  => ['id' => '456', 'slug' => 'get'],
+                ]);
+            });
+
+        $this
+            ->callRouteWithMocks([
+                Request::class => $mockRequest,
+                Json::class => $mockResponse
             ]);
 
     }
