@@ -121,7 +121,7 @@ class TestCase extends PhpUnitTestCase
         $parsedUrl = parse_url($url);
 
         $this->url = new Url(array_merge($urlComponents, [
-            'host' => $parsedUrl['host'] ?? static::DEFAULT_HOST,
+            'host' => $parsedUrl['host'] ?? $this->projectHost ?? static::DEFAULT_HOST,
             'pathComponents' => explode('/', substr($parsedUrl['path'], 1) ?: ''),
             'requestUri' => $parsedUrl['path'],
         ]));
