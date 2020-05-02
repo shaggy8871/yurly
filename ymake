@@ -9,14 +9,14 @@ if (isset($composer['autoload']['psr-4'])) {
 } else {
     $autoloadClasses = [];
 }
-if (isset($composer['autoload']['psr-4'])) {
+if (isset($composer['autoload-dev']['psr-4'])) {
     $autoloadDevClasses = $composer['autoload-dev']['psr-4'];
 } else {
-    $autoloadDevClasses = $autoloadClasses;
+    $autoloadDevClasses = [];
 }
 
-if (!isset($autoloadClasses) || empty($autoloadClasses)) {
-    echo sprintf("  ❌  Unable to find autoload namespaces from composer.json; please add there first, then try again\n");
+if (!isset($autoloadClasses) || empty($autoloadClasses) || !isset($autoloadDevClasses) || empty($autoloadDevClasses)) {
+    echo sprintf("  ❌  Unable to find 'autoload' and 'autoload-dev' properties in composer.json; please add there first, then try again.\n");
     exit(1);
 }
 
