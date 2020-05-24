@@ -21,7 +21,7 @@ class Canonical
         $requiredKeys = !is_array($requiredKeys) ? [] : $requiredKeys;
 
         // Remove all characters we don't understand
-        if (preg_replace('/[^A-Za-z0-9():_.\/]/', '', $urlTemplate) != $urlTemplate) {
+        if (preg_replace('/[^A-Za-z0-9():_.\/-]/', '', $urlTemplate) != $urlTemplate) {
             throw new URLParseException("Canonical docblock contains unparseable characters.");
         }
 
