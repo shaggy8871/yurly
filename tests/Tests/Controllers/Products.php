@@ -23,6 +23,13 @@ class Products extends Controller
 
     }
 
+    public function routeFile_Html(): string
+    {
+
+        return "ProductsRouteFileDotHtml";
+
+    }
+
     /**
      * @canonical /products/urlParamsRequest/:id(/:slug)
      */

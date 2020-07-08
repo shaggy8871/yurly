@@ -104,6 +104,13 @@ class Index extends Controller
 
     }
 
+    public function routeUrl_With_Dots(): string
+    {
+
+        return "UrlWithDots";
+
+    }
+
     public function routeUrlForFallback1(Get $request, Html $response): void
     {
 

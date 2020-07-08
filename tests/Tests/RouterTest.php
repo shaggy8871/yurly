@@ -138,12 +138,39 @@ class RouterTest extends TestCase
 
     }
 
+    public function testIndexRouteUrlParamsRequestWithHyphen()
+    {
+
+        $this->expectOutputString(json_encode(['id' => '123', 'slug' => 'some-value']));
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/urlParamsRequest/123/some-value'));
+
+    }
+
+    public function testIndexRouteUrlWithDots()
+    {
+
+        $this->expectOutputString('UrlWithDots');
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/url.with.dots'));
+
+    }
+
     public function testProductsRouteDefault()
     {
 
         $this->expectOutputString('ProductsRouteDefault');
 
         $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products'));
+
+    }
+
+    public function testProductsRouteUrlWithDots()
+    {
+
+        $this->expectOutputString('ProductsRouteFileDotHtml');
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/file.html'));
 
     }
 

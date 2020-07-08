@@ -51,7 +51,7 @@ class Router
 
         // Iterate through each and convert to class or method name
         foreach($pathComponents as &$pathComponent) {
-            $pathComponent = str_replace('-', '_', ucfirst($pathComponent));
+            $pathComponent = str_replace('.', '_', str_replace('-', '_', ucfirst($pathComponent)));
         }
 
         // Attempt 1: Look for RouteResolver type class in project and instantiate
@@ -236,7 +236,7 @@ class Router
 
         // Iterate through each and convert to class or method name
         foreach($pathComponents as &$pathComponent) {
-            $pathComponent = str_replace('-', '_', ucfirst($pathComponent));
+            $pathComponent = str_replace('.', '_', str_replace('-', '_', ucfirst($pathComponent)));
         }
 
         // Attempt 1: if we have a controller class, look for a routeNotFound method
