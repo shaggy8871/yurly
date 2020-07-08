@@ -16,6 +16,7 @@ class Init
     protected $projects;
     protected $onRouteNotFound;
     protected $onUrlParseError;
+    protected $router;
 
     public function __construct(array $projects = [])
     {
@@ -55,8 +56,8 @@ class Init
         try {
 
             $url = UrlFactory::autodetect();
-            $router = new Router($this->getProjectFromUrl($url));
-            $router->parseUrl($url);
+            $this->router = new Router($this->getProjectFromUrl($url));
+            $this->router->parseUrl($url);
 
         } catch (ConfigException $e) {
 
@@ -112,6 +113,16 @@ class Init
             }
 
         }
+
+    }
+
+    /**
+     * Returns the router log data
+     */
+    public function getRouterLog(): array
+    {
+
+        return $this->router->getLog();
 
     }
 

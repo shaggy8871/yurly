@@ -201,6 +201,15 @@ class RouterTest extends TestCase
 
     }
 
+    public function testProductsRouteFallback()
+    {
+
+        $this->expectOutputString('fallback.with-dots-and-dashes');
+
+        $this->router->parseUrl($this->generateUrl('http://www.testyurly.com/products/fallback.with-dots-and-dashes'));
+
+    }
+
     public function testCaseTestRoute()
     {
 

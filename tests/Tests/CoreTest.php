@@ -208,6 +208,53 @@ class CoreTest extends TestCase
 
     }
 
+    public function testGetRouterLog()
+    {
+
+        $this->expectOutputString('RouteTwigResponseOkay' . PHP_EOL);
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['HTTP_HOST'] = 'www.testyurly.com';
+        $_SERVER['SERVER_PORT'] = 80;
+        $_SERVER['SCRIPT_NAME'] = '/index.php';
+        $_SERVER['SCRIPT_FILENAME'] = 'index.php';
+        $_SERVER['PATH_INFO'] = '/twigresponse';
+        $_SERVER['QUERY_STRING'] = '';
+
+        $projects = [
+            new Project('www.testyurly.com', 'Tests', 'tests', true),
+        ];
+
+        $app = new Init($projects);
+
+        // Start 'em up
+        $app->run();
+
+        $log = $app->getRouterLog();
+
+        $this->assertEquals($log[0], '[parseUrl] Attempt 1: RouteResolver returned \'\'.');
+
+    }
+
+    public static function setUpBeforeClass(): void
+    {
+
+        if (!file_exists(__DIR__ . "/Views/cache")) {
+            exec("mkdir " . __DIR__ . "/Views/cache");
+            exec("chmod 777 " . __DIR__ . "/Views/cache");
+        }
+
+    }
+
+    public static function tearDownAfterClass(): void
+    {
+
+        if (file_exists(__DIR__ . "/Views/cache")) {
+            exec("rm -rf " . __DIR__ . "/Views/cache");
+        }
+
+    }
+
     /*
      * Construct a Url object using the supplied requestUri
      */

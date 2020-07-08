@@ -89,6 +89,8 @@ class Router
                     }
                 }
 
+            } else {
+                $this->log[] = sprintf("[parseUrl] Attempt 1: No RouteResolver found.");
             }
 
         }
@@ -106,6 +108,7 @@ class Router
                     $this->log[] = sprintf("[parseUrl] Attempt 2: Found method %s::%s.", $controller, $method);
                     return $methodFound;
                 }
+                $this->log[] = sprintf("[parseUrl] Attempt 2 failed. Controller '%s', method '%s' not found.", $controller, $method);
             } else {
                 $this->log[] = sprintf("[parseUrl] Attempt 2 failed. Controller '%s', method '%s' not found.", $controllerClass, $method);
             }
@@ -123,6 +126,7 @@ class Router
                     $this->log[] = sprintf("[parseUrl] Attempt 3: Found method %s::%s.", $controller, $method);
                     return $methodFound;
                 }
+                $this->log[] = sprintf("[parseUrl] Attempt 3 failed. Controller '%s', method '%s' not found.", $controller, $method);
             } else {
                 $this->log[] = sprintf("[parseUrl] Attempt 3 failed. Controller '%s', method '%s' not found.", $lookupName, $method);
             }
@@ -139,6 +143,7 @@ class Router
                 $this->log[] = sprintf("[parseUrl] Attempt 4: Found method %s::%s.", $controller, $method);
                 return $methodFound;
             }
+            $this->log[] = sprintf("[parseUrl] Attempt 4 failed. Controller '%s', method '%s' not found.", $controller, $method);
         } else {
             $this->log[] = sprintf("[parseUrl] Attempt 4 failed. Controller '%s', method '%s' not found.", 'Index', $method);
         }

@@ -60,6 +60,16 @@ class Products extends Controller
 
     }
 
+    /**
+     * @canonical /products/:fallback_value
+     */
+    public function routeFallback(RouteParams $request): void
+    {
+
+        echo $request->fallback_value;
+
+    }
+
     public function routeUrlDestinationAutodetect(): void
     {
 
