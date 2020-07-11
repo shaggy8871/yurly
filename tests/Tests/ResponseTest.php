@@ -48,4 +48,20 @@ class ResponseTest extends TestCase
 
     }
 
+    public function testJsonPrettyResponseInterface()
+    {
+
+        $this->expectOutputString("{\n    \"hello\": \"world!\"\n}");
+
+        $project = new \Yurly\Core\Project('', __NAMESPACE__, 'tests', true);
+        $ctx = new \Yurly\Core\Context($project);
+        $json = new \Yurly\Inject\Response\Json($ctx);
+        $json->setOptions(JSON_PRETTY_PRINT);
+        $response = new \Yurly\Inject\Response\Response($ctx);
+        $response->setResponseClass($json)
+                 ->setViewParams(['hello' => 'world!'])
+                 ->render();
+
+    }
+
 }

@@ -7,6 +7,7 @@ class Jsonp extends ResponseFoundation implements ResponseInterface
 
     protected $contentType = 'application/json';
     protected $callback = 'callback';
+    protected $options = 0;
 
     /**
      * Render content in Jsonp encoded format
@@ -21,7 +22,7 @@ class Jsonp extends ResponseFoundation implements ResponseInterface
             header('Content-Type: ' . $this->contentType);
         }
 
-        echo sprintf('%s(%s)', $this->callback, json_encode($params));
+        echo sprintf('%s(%s)', $this->callback, json_encode($params, $this->options));
 
     }
 
@@ -32,6 +33,16 @@ class Jsonp extends ResponseFoundation implements ResponseInterface
     {
 
         $this->callback = $callback;
+
+    }
+
+    /**
+     * Set JSON encoding options
+     */
+    public function setOptions(int $options): void
+    {
+
+        $this->options = $options;
 
     }
 

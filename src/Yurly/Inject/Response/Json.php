@@ -6,6 +6,7 @@ class Json extends ResponseFoundation implements ResponseInterface
 {
 
     protected $contentType = 'application/json';
+    protected $options = 0;
 
     /**
      * Render content in Json encoded format
@@ -20,7 +21,17 @@ class Json extends ResponseFoundation implements ResponseInterface
             header('Content-Type: ' . $this->contentType);
         }
 
-        echo json_encode($params);
+        echo json_encode($params, $this->options);
+
+    }
+
+    /**
+     * Set JSON encoding options
+     */
+    public function setOptions(int $options): void
+    {
+
+        $this->options = $options;
 
     }
 
